@@ -499,8 +499,11 @@ class SeachEngine_App(QWidget):
         self.tab2_view_table_button.clicked.connect(self.tab2_preview_view)
 
 
-        db_table = []
-        db_table = db_table + [''.join(item) for item in self.dbms.return_all_model()]
+        db_table = []        
+        try:
+            db_table = db_table + [''.join(item) for item in self.dbms.return_all_model()]
+        except TypeError as e:
+            print("No data")
         self.tab2_model_select.clear()
         self.tab2_model_select.addItems(db_table)
 
@@ -970,7 +973,7 @@ class SeachEngine_App(QWidget):
             self.status.setStyleSheet("QLabel {background-color : blue; color : white;}")
             self.status.repaint()
 
-            subprocess.call("cd C:\\Program Files\\PostgreSQL\\11\\bin &&set \"PGPASSWORD=fortinet\"&&pg_restore -C -d postgres -v -h localhost -p 5432 -U postgres "+self.tab1_cur_sqlpath.text(), shell=True)
+            subprocess.call("cd C:\\Program Files\\PostgreSQL\\12\\bin &&set \"PGPASSWORD=fortinet\"&&pg_restore -C -d postgres -v -h localhost -p 5432 -U postgres "+self.tab1_cur_sqlpath.text(), shell=True)
 
             self.text_edit_widget.appendPlainText("The sql file ("+self.tab1_cur_sqlpath.text()+") has been successfully added to the data base")
 
