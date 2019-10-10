@@ -500,7 +500,10 @@ class SeachEngine_App(QWidget):
 
 
         db_table = []
-        db_table = db_table + [''.join(item) for item in self.dbms.return_all_model()]
+        try:
+            db_table = db_table + [''.join(item) for item in self.dbms.return_all_model()]
+        except TypeError as e:
+            print("No data tab2")
         self.tab2_model_select.clear()
         self.tab2_model_select.addItems(db_table)
 
@@ -1852,12 +1855,18 @@ class SeachEngine_App(QWidget):
                 self.tab2_custom_view_select.addItems(self.dbms.return_list_of_views())
 
                 self.tab3_sensor_select.clear()
-                self.tab3_sensor_select.addItems(self.dbms.return_list_of_graph())
+                try:
+                    self.tab3_sensor_select.addItems(self.dbms.return_list_of_graph())
+                except TypeError:
+                    print("NOOO DATA YET")
                 db_table = []
                 db_table = db_table + [''.join(item) for item in self.dbms.return_all_model()]
                 self.tab3_db_select.setCurrentIndex(db_table.index(self.tab2_model_select.currentText()))
                 self.tab3_sensor_select.clear()
-                self.tab3_sensor_select.addItems(self.dbms.return_list_of_graph())
+                try:
+                    self.tab3_sensor_select.addItems(self.dbms.return_list_of_graph())
+                except TypeError:
+                    print("NOOO DATA YET")
 
 
                 try:
@@ -1903,12 +1912,18 @@ class SeachEngine_App(QWidget):
                     self.tab2_custom_view_select.addItems(self.dbms.return_list_of_views())
 
                     self.tab3_sensor_select.clear()
-                    self.tab3_sensor_select.addItems(self.dbms.return_list_of_graph())
+                    try:
+                        self.tab3_sensor_select.addItems(self.dbms.return_list_of_graph())
+                    except TypeError:
+                        print("NOOO DATA YET")
                     db_table = []
                     db_table = db_table + [''.join(item) for item in self.dbms.return_all_model()]
                     self.tab3_db_select.setCurrentIndex(db_table.index(self.tab2_model_select.currentText()))
                     self.tab3_sensor_select.clear()
-                    self.tab3_sensor_select.addItems(self.dbms.return_list_of_graph())
+                    try:
+                        self.tab3_sensor_select.addItems(self.dbms.return_list_of_graph())
+                    except TypeError:
+                        print("NOOO DATA YET")
 
                     try:
                         test = ["".join(x) for x in self.dbms.query_return_all_data("SELECT to_regclass('\"{}\"')".format(self.graph_table_name))]
@@ -1932,26 +1947,34 @@ class SeachEngine_App(QWidget):
 
 #Create Table
     def tab2_show_view(self):
-        t_c = self.dbms.return_column_names(self.tab2_custom_view_select.currentText())
-        t_l = len(t_c)
-        # create the view
-        self.tab2_tableWidget.setColumnCount(t_l)
-        self.tab2_tableWidget.setHorizontalHeaderLabels(t_c)
-        self.tab2_tableWidget.setRowCount(0)  # reset table
-        rows = 3000
-        self.tab2_tableWidget.setRowCount(rows)
-        previous_length = 0
-        for row in self.dbms.return_all_data(self.tab2_custom_view_select.currentText()):
-            for c in range (t_l):
-                self.tab2_tableWidget.setItem(previous_length, c, QTableWidgetItem(str(row[c])))
-            previous_length += 1
+        try:
+            t_c = self.dbms.return_column_names(self.tab2_custom_view_select.currentText())
+            t_l = len(t_c)
+            # create the view
+            self.tab2_tableWidget.setColumnCount(t_l)
+            self.tab2_tableWidget.setHorizontalHeaderLabels(t_c)
+            self.tab2_tableWidget.setRowCount(0)  # reset table
+            rows = 3000
+            self.tab2_tableWidget.setRowCount(rows)
+            previous_length = 0
+            for row in self.dbms.return_all_data(self.tab2_custom_view_select.currentText()):
+                for c in range(t_l):
+                    self.tab2_tableWidget.setItem(previous_length, c, QTableWidgetItem(str(row[c])))
+                previous_length += 1
 
+            self.tab2_status.setText(
+                "Please Check The Table Below: \n -----{}-----".format(self.tab2_custom_view_select.currentText()))
+            self.tab2_status.setStyleSheet("background-color: rgba(102, 255, 51, 90%);"
+                                           "color: rgba(0, 0, 0, 100%);"
+                                           )
+            # self.tab2_tableWidget.move(0, 0)
+        except TypeError:
+            print("No table selected")
+            self.tab2_status.setText("No table selected")
+            self.tab2_status.setStyleSheet("background-color: red;"
+                                           "color: white;"
+                                           )
 
-        self.tab2_status.setText("Please Check The Table Below: \n -----{}-----".format(self.tab2_custom_view_select.currentText()))
-        self.tab2_status.setStyleSheet("background-color: rgba(102, 255, 51, 90%);"
-                                  "color: rgba(0, 0, 0, 100%);"
-                                  )
-        #self.tab2_tableWidget.move(0, 0)
 
 
     def start_button(self):
@@ -2164,15 +2187,22 @@ class Qapp_thread(QtCore.QThread):
         self.dbms.create_sensor_unit_table()
         self.dbms.create_main_blacklist_table()
 
+
         data_scraper = DataBaseInfo(self.table_data['model'])
         if self.table_data['manuel']:
             print("Parsing Manuel")
-            data_scraper.manual_log_parser(logfile,self.table_data['model'],self.table_data['testtype'])
+            try:
+                data_scraper.manual_log_parser(logfile,self.table_data['model'],self.table_data['testtype'])
+            except:
+                print("Please check your Manuel file path")
         else:
             print("Parsing CM")
-            data_scraper.tgz_unzip(logfile,self.table_data['model'],self.table_data['testtype'],self.table_data['from_time'],self.table_data['to_time'])
-            data_scraper.folder_parser(logfile, self.table_data['model'], self.table_data['testtype'],
-                                       self.table_data['from_time'], self.table_data['to_time'])
+            try:
+                data_scraper.tgz_unzip(logfile,self.table_data['model'],self.table_data['testtype'],self.table_data['from_time'],self.table_data['to_time'])
+                data_scraper.folder_parser(logfile, self.table_data['model'], self.table_data['testtype'],
+                                           self.table_data['from_time'], self.table_data['to_time'])
+            except:
+                print("Please check your CM file path")
         #
         #self.sig1.emit(table_data)
         self.sig1.emit({'Test':'Finish'})
