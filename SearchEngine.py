@@ -136,7 +136,6 @@ class SeachEngine_App(QWidget):
 
         # Thread declaration
         self.app_thread = Qapp_thread()
-        self.tab_5_graph_thread = Qtab_5_graph_thread()
 
         # Styling for the title
         self.title = LabelBox_title("Search Engine")
@@ -450,7 +449,8 @@ class SeachEngine_App(QWidget):
         self.tab2_graph_interval_txt = TextBox(self)
         self.tab2_graph_interval_txt.setPlaceholderText("Interval")
 
-        self.tab2_checkBox = CheckBox("Per SN MAX Value?")
+        self.tab2_max_checkBox = CheckBox("Per SN MAX Value?")
+        self.tab2_avg_checkBox = CheckBox("Per SN AVG Value?")
 
 
 
@@ -478,7 +478,8 @@ class SeachEngine_App(QWidget):
 
         self.tab2.layout.addWidget(self.tab2_save_view_label, 14, 0, 1, 1)
         self.tab2.layout.addWidget(self.tab2_save_view_txt, 14, 1, 1, 6)
-        self.tab2.layout.addWidget(self.tab2_checkBox, 15, 1, 1, 6)
+        self.tab2.layout.addWidget(self.tab2_max_checkBox, 15, 1, 1, 1)
+        self.tab2.layout.addWidget(self.tab2_avg_checkBox, 15, 2, 1, 1)
         self.tab2.layout.addWidget(self.tab2_view_table_button, 16, 0, 1, 6)
         self.tab2.layout.addWidget(self.tab2_create_button, 17, 0, 1, 6)
 
@@ -534,6 +535,8 @@ class SeachEngine_App(QWidget):
         self.tab2_from_select.setDate(QDate(1999, 1, 1))
         self.tab2_to_select.setDate(QDate.currentDate())
 
+        self.tab2_max_checkBox.stateChanged.connect(self.onStateChange)
+        self.tab2_avg_checkBox.stateChanged.connect(self.onStateChange)
 
 #tab3
 
@@ -729,10 +732,10 @@ class SeachEngine_App(QWidget):
         self.tab5_model_select_label = LabelBox("Please Select The Model")
         self.tab5_model_select_label.setFont(font_label)
 
-        self.tab5_table_x_select_label = LabelBox("Please Select The Table (Verticle)")
+        self.tab5_table_x_select_label = LabelBox("Please Select The Table (Horizontal)")
         self.tab5_table_x_select_label.setFont(font_label)
 
-        self.tab5_table_y_select_label = LabelBox("Please Select The Table for (Horizontal)")
+        self.tab5_table_y_select_label = LabelBox("Please Select The Table for (Verticle)")
         self.tab5_table_y_select_label.setFont(font_label)
 
         self.tab5_test_type_select_label = LabelBox("Please Select Test Type")
@@ -960,6 +963,15 @@ class SeachEngine_App(QWidget):
         self.tab6_test_type_select.currentTextChanged.connect(self.tab6_on_test_type_changed)
         self.tab6_sensor_graph_button.clicked.connect(self.tab6_graph_button_action)
 
+    # Check all on-click logic
+    @pyqtSlot(int)
+    def onStateChange(self, state):
+        if self.sender() == self.tab2_max_checkBox:
+            if state == Qt.Checked:
+                self.tab2_avg_checkBox.setChecked(False)
+        elif self.sender() == self.tab2_avg_checkBox:
+            if state == Qt.Checked:
+                self.tab2_max_checkBox.setChecked(False)
 
     def restore_db_action(self):
 
@@ -1282,61 +1294,13 @@ class SeachEngine_App(QWidget):
 
     def tab5_graph_button_action(self):
 
-        try:
-            self.tab_5_graph_thread.sig1.disconnect()
-            self.tab5_sig.disconnect()
-        except:
-            pass
-
-        # Establish the connection between Main signal (tab1_sig) to slot (start_source)
-        try:
-            self.tab5_sig.connect(self.tab_5_graph_thread.start_source)
-        except TypeError as e:
-            print(e)
-        except AttributeError as e:
-            print(e)
-        except ValueError as e:
-            print(e)
-        except IOError as e:
-            print(e)
-        # Change the status label box
-        self.tab5_status.setText("Collecting Graphing Data, Please Wait.")
-        self.tab5_status.setStyleSheet("background-color: rgba(153, 204, 255, 90%);"
-                                       "color: rgba(0, 0, 0, 100%);"
-                                       )
-
         graph_sensor = self.dbms.return_column_names(self.tab5_graph_select.currentText())
-        print(self.tab5_graph_select.currentText())
-        print(graph_sensor)
-        graph_dict = {'table_name':self.tab5_graph_select.currentText(),'sensor_x':graph_sensor[4],'sensor_y':graph_sensor[5],'model':self.tab5_model_select.currentText()}
-        self.tab5_sig.emit(graph_dict)
-
-        # Establish the connection from thread signal back to main (to know when the thread is finished running)
-        # tab5_end_info will be executed when the thread is finished
-
-        self.tab_5_graph_thread.sig1.connect(self.tab5_end_info)
-
-        # Start the thread
-        self.tab_5_graph_thread.start()
-        self.tab5_sensor_graph_button.setEnabled(False)
-        self.tab5_sensor_graph_button.setText("Calculating!!!")
-        self.tab_5_graph_thread.running = False
-
-    def tab5_end_info(self, info):
-
-        print("Test Finished! {} ".format(info))
-
-        self.tab5_text_edit_widget.appendPlainText("-----Please Check the Pop Up Graph-----")
-
-        # Set the status label box
-
-        self.tab5_status.setText("Process Ended Successfully")
-        self.tab5_status.setStyleSheet("background-color: rgba(102, 255, 51, 90%);"
-                                       "color: rgba(0, 0, 0, 100%);"
-                                       )
-        # Re-enabling the start button
-        self.tab5_sensor_graph_button.setEnabled(True)
-        self.tab5_sensor_graph_button.setText("Graph")
+        if graph_sensor:
+            self.fig1 = plt.figure(FigureClass=graphFigure)
+            self.fig1.plot_scatter(self.tab5_graph_select.currentText(), graph_sensor[4], graph_sensor[5], self.tab5_model_select.currentText())
+        else:
+            self.tab5_text_edit_widget.appendPlainText(
+                "Please Select a Table to Graph")
 
     def tab5_export_button_action(self):
         try:
@@ -1648,21 +1612,31 @@ class SeachEngine_App(QWidget):
                 "FROM \"{t1}\" " \
                 "WHERE \"{t1}\".reading IS NOT NULL "
 
-        unique_base_query_top = "SELECT \"Table1\".serial_number," \
-                                "\"{t1}\".test_date, " \
-                                "\"{t1}\".test_type, " \
-                                "\"{t1}\".line_number ," \
-                                "\"{t1}\".alarm ," \
-                                "\"{t1}\".reading " \
-                                "FROM (SELECT \"{t1}\".serial_number, MAX(\"{t1}\".reading) AS reading " \
-                                "FROM \"{t1}\" GROUP BY serial_number) AS \"Table1\" " \
-                                "INNER JOIN \"{t1}\" " \
-                                "ON \"Table1\".reading = \"{t1}\".reading " \
-                                "AND \"Table1\".serial_number = \"{t1}\".serial_number " \
-                                "WHERE \"{t1}\".reading IS NOT NULL "
 
 
-        if self.tab2_checkBox.checkState():
+        if self.tab2_max_checkBox.checkState():
+            unique_base_query_top = "SELECT DISTINCT(\"Table1\".serial_number)," \
+                                    "\"{t1}\".test_type, " \
+                                    "\"{t1}\".alarm ," \
+                                    "\"Table1\".reading " \
+                                    "FROM (SELECT \"{t1}\".serial_number, MAX(\"{t1}\".reading) AS reading " \
+                                    "FROM \"{t1}\" GROUP BY serial_number) AS \"Table1\" " \
+                                    "INNER JOIN \"{t1}\" " \
+                                    "ON \"Table1\".serial_number = \"{t1}\".serial_number " \
+                                    "WHERE \"{t1}\".reading IS NOT NULL "
+        elif self.tab2_avg_checkBox.checkState():
+            unique_base_query_top = "SELECT DISTINCT(\"Table1\".serial_number)," \
+                                    "\"{t1}\".test_type, " \
+                                    "\"{t1}\".alarm ," \
+                                    "\"Table1\".reading " \
+                                    "FROM (SELECT \"{t1}\".serial_number, AVG(\"{t1}\".reading) AS reading " \
+                                    "FROM \"{t1}\" GROUP BY serial_number) AS \"Table1\" " \
+                                    "INNER JOIN \"{t1}\" " \
+                                    "ON \"Table1\".serial_number = \"{t1}\".serial_number " \
+                                    "WHERE \"{t1}\".reading IS NOT NULL "
+
+
+        if self.tab2_max_checkBox.checkState() or self.tab2_avg_checkBox.checkState():
             if query_val['low'] and query_val['high']:
                 unique_base_query_top = unique_base_query_top + sql_dict['date_check']
             if query_val['sn_low'] and query_val['sn_high']:
@@ -1671,7 +1645,9 @@ class SeachEngine_App(QWidget):
                 unique_base_query_top = unique_base_query_top + sql_dict['type_check']
             unique_base_query_top = unique_base_query_top + sql_dict['model_check']
 
-            query = unique_base_query_top.format(**query_val)  + " ORDER BY reading"
+            if self.tab2_max_checkBox.checkState() or self.tab2_avg_checkBox.checkState():
+                query = unique_base_query_top.format(**query_val) + " ORDER BY reading, \"Table1\".serial_number"
+
 
         else:
             if query_val['low'] and query_val['high']:
@@ -1684,9 +1660,13 @@ class SeachEngine_App(QWidget):
 
             query = base_query.format(**query_val)+ "ORDER BY reading"
 
+        if self.tab2_max_checkBox.checkState() or self.tab2_avg_checkBox.checkState():
+            t_c = ['Serial Number', 'Test Type', table1 + ' Alarm',
+                   table1 + ' Reading']
+        else:
+            t_c = ['Serial Number', 'Test Date', 'Test Type', table1 + ' LineNumber', table1 + ' Alarm',
+                   table1 + ' Reading']
 
-        t_c = ['Serial Number', 'Test Date', 'Test Type', table1 + ' LineNumber', table1 + ' Alarm',
-               table1 + ' Reading']
         t_l = len(t_c)
         # create the view
         self.tab2_tableWidget.setColumnCount(t_l)
@@ -1748,20 +1728,29 @@ class SeachEngine_App(QWidget):
                 "FROM \"{t1}\" " \
                 "WHERE \"{t1}\".reading IS NOT NULL "
 
-        unique_base_query_top = "CREATE VIEW \"{vn}\" AS SELECT \"Table1\".serial_number," \
-                                "\"{t1}\".test_date, " \
-                                "\"{t1}\".test_type, " \
-                                "\"{t1}\".line_number ," \
-                                "\"{t1}\".alarm ," \
-                                "\"{t1}\".reading " \
-                                "FROM (SELECT \"{t1}\".serial_number, MAX(\"{t1}\".reading) AS reading " \
-                                "FROM \"{t1}\" GROUP BY serial_number) AS \"Table1\" " \
-                                "INNER JOIN \"{t1}\" " \
-                                "ON \"Table1\".reading = \"{t1}\".reading " \
-                                "AND \"Table1\".serial_number = \"{t1}\".serial_number " \
-                                "WHERE \"{t1}\".reading IS NOT NULL "
+        if self.tab2_max_checkBox.checkState():
+            unique_base_query_top = "CREATE VIEW \"{vn}\" AS SELECT DISTINCT(\"Table1\".serial_number)," \
+                                    "\"{t1}\".test_type, " \
+                                    "\"{t1}\".alarm ," \
+                                    "\"Table1\".reading " \
+                                    "FROM (SELECT \"{t1}\".serial_number, MAX(\"{t1}\".reading) AS reading " \
+                                    "FROM \"{t1}\" GROUP BY serial_number) AS \"Table1\" " \
+                                    "INNER JOIN \"{t1}\" " \
+                                    "ON \"Table1\".serial_number = \"{t1}\".serial_number " \
+                                    "WHERE \"{t1}\".reading IS NOT NULL "
 
-        if self.tab2_checkBox.checkState():
+        elif self.tab2_avg_checkBox.checkState():
+            unique_base_query_top = "CREATE VIEW \"{vn}\" AS SELECT DISTINCT(\"Table1\".serial_number)," \
+                                    "\"{t1}\".test_type, " \
+                                    "\"{t1}\".alarm ," \
+                                    "\"Table1\".reading " \
+                                    "FROM (SELECT \"{t1}\".serial_number, AVG(\"{t1}\".reading) AS reading " \
+                                    "FROM \"{t1}\" GROUP BY serial_number) AS \"Table1\" " \
+                                    "INNER JOIN \"{t1}\" " \
+                                    "ON \"Table1\".serial_number = \"{t1}\".serial_number " \
+                                    "WHERE \"{t1}\".reading IS NOT NULL "
+
+        if self.tab2_max_checkBox.checkState() or self.tab2_avg_checkBox.checkState():
             if query_val['low'] and query_val['high']:
                 unique_base_query_top = unique_base_query_top + sql_dict['date_check']
             if query_val['sn_low'] and query_val['sn_high']:
@@ -1770,7 +1759,7 @@ class SeachEngine_App(QWidget):
                 unique_base_query_top = unique_base_query_top + sql_dict['type_check']
             unique_base_query_top = unique_base_query_top + sql_dict['model_check']
 
-            query = unique_base_query_top.format(**query_val) +" ORDER BY reading"
+            query = unique_base_query_top.format(**query_val) +" ORDER BY reading, \"Table1\".serial_number"
 
         else:
             if query_val['low'] and query_val['high']:
@@ -2005,7 +1994,7 @@ class SeachEngine_App(QWidget):
             self.status.setText("Please Enter the first 6 letters of the SN")
             self.status.setStyleSheet("QLabel {background-color : red; color : white;}")
         elif not self.tab1_test_type_text.text():
-            print("Please Enter at least one test type seperate by commas (ITS, HTS,SFC)")
+            print("Please Enter at least one test type separate by commas (ITS, HTS,SFC)")
             self.status.setText("Please Enter at least one test type seperate by commas (ITS, HTS,SFC)")
             self.status.setStyleSheet("QLabel {background-color : red; color : white;}")
         else:
@@ -2208,50 +2197,6 @@ class Qapp_thread(QtCore.QThread):
         self.sig1.emit({'Test':'Finish'})
 
 
-
-class Qtab_5_graph_thread(QtCore.QThread):
-
-    # string signal
-    sig1 = pyqtSignal(dict)
-
-    def __init__(self, parent=None):
-        QtCore.QThread.__init__(self, parent)
-        self.table_name = ""
-        self.sensor_x = ""
-        self.sensor_y = ""
-        self.model = ""
-        self.running = False
-
-
-
-    # Function call when first connect to the thread
-    def start_source(self, info):
-        # pass the content in "Info" to "start_source" slot, where info has the full command form the main app
-        self.table_name = info['table_name']
-        self.sensor_x = info['sensor_x']
-        self.sensor_y = info['sensor_y']
-        self.model = info['model']
-        print("The Data Collection Will Start Soon!")
-
-    def run(self):
-        self.running = True
-        print("Graph Starting!")
-
-
-        #print(self.table_name)
-        #print(self.sensor_x)
-        #print(self.sensor_y)
-
-        self.fig1 = plt.figure(FigureClass=graphFigure)
-        try:
-            self.fig1.plot_scatter(self.table_name,self.sensor_x,self.sensor_y,self.model)
-        except RuntimeError:
-            print("Run time error, please try again")
-
-        print( "Graph {} Successfully".format(self.table_name))
-
-
-        self.sig1.emit({'Result':"Data Collection Done "})
 
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
