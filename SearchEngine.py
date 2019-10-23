@@ -760,8 +760,16 @@ class SeachEngine_App(QWidget):
         self.tab5_status.setFont(font_status)
         self.tab5_status.setAlignment(Qt.AlignCenter)
 
+        self.tab5_sensor_relationship_graph_button = PushBut(self)
+        self.tab5_sensor_relationship_graph_button.setText("Graph Relationship")
+        self.tab5_sensor_relationship_graph_button.setFont(font_but)
+
+        self.tab5_sensor_difference_graph_button = PushBut(self)
+        self.tab5_sensor_difference_graph_button.setText("Graph Difference")
+        self.tab5_sensor_difference_graph_button.setFont(font_but)
+
         self.tab5_sensor_graph_button = PushBut(self)
-        self.tab5_sensor_graph_button.setText("Graph")
+        self.tab5_sensor_graph_button.setText("Graph Scatter")
         self.tab5_sensor_graph_button.setFont(font_but)
 
         self.tab5_sensor_export_button = PushBut(self)
@@ -789,8 +797,10 @@ class SeachEngine_App(QWidget):
         self.tab5.layout.addWidget(self.tab5_graph_select_label, 15, 0, 1, 2)
         self.tab5.layout.addWidget(self.tab5_graph_select, 15, 2, 1, 4)
         self.tab5.layout.addWidget(self.tab5_sensor_create_button, 16, 0, 1, 2)
-        self.tab5.layout.addWidget(self.tab5_sensor_graph_button, 16, 2, 1, 2)
-        self.tab5.layout.addWidget(self.tab5_sensor_export_button, 16, 4, 1, 2)
+        self.tab5.layout.addWidget(self.tab5_sensor_relationship_graph_button, 16, 2, 1, 1)
+        self.tab5.layout.addWidget(self.tab5_sensor_difference_graph_button, 16, 3, 1, 1)
+        self.tab5.layout.addWidget(self.tab5_sensor_graph_button, 16, 4, 1, 1)
+        self.tab5.layout.addWidget(self.tab5_sensor_export_button, 16, 5, 1, 1)
 
 
         self.tab5.setLayout(self.tab5.layout)
@@ -835,6 +845,8 @@ class SeachEngine_App(QWidget):
         self.tab5_sensor_create_button.clicked.connect(self.tab5_create_view)
         self.tab5_sensor_export_button.clicked.connect(self.tab5_export_button_action)
         self.tab5_sensor_graph_button.clicked.connect(self.tab5_graph_button_action)
+        self.tab5_sensor_relationship_graph_button.clicked.connect(self.tab5_graph_relationship_button_action)
+        self.tab5_sensor_difference_graph_button.clicked.connect(self.tab5_graph_difference_button_action)
 
         # Tab 6 start
         self.tab6_title = LabelBox_title("Sensor vs Sensor Graphical Interface")
@@ -1197,6 +1209,153 @@ class SeachEngine_App(QWidget):
         self.tab4_blacklist_select.clear()
         self.tab4_blacklist_select.addItems(self.dbms.return_all_blacklist())
 
+    def tab5_create_max_view(self, sensor_x, sensor_y, baseview):
+        view_name = "Temp_Horizontal_MAX"
+
+        query_val = {'sx': sensor_x, 'sy': sensor_y, 'vn': view_name}
+
+        base_query = "CREATE VIEW \"{vn}\" AS SELECT serial_number, test_date, test_type, ref_line_number, \"{sx}_reading\", \"{sy}_reading\" " \
+                     "FROM \""+baseview+"\" WHERE (serial_number, \"{sx}_reading\", \"{sy}_reading\") " \
+                     "IN (SELECT serial_number, \"{sx}_reading\", \"{sy}_reading\" " \
+                     "FROM ( SELECT serial_number, \"{sx}_reading\", \"{sy}_reading\", " \
+                     "row_number() over (partition by serial_number " \
+                     "ORDER BY \"{sx}_reading\" DESC, \"{sy}_reading\" DESC) " \
+                     "AS rn " \
+                     "FROM \""+baseview+"\") AS X WHERE rn = 1) " \
+                     "ORDER BY serial_number"
+
+        query = base_query.format(**query_val)
+
+        print(query)
+
+        try:
+            test = ["".join(x) for x in
+                    self.dbms.query_return_all_data("SELECT to_regclass('\"{}\"')".format(view_name))]
+            self.tab5_status.setText("Custom Table {} Already Exists, the data will be overwritten".format(view_name))
+            self.tab5_status.setStyleSheet("QLabel {background-color : red; color : white;}")
+            self.dbms.execute_query("DROP VIEW \"{}\";".format(view_name))
+            self.dbms.execute_query(query)
+            try:
+                test = ["".join(x) for x in
+                        self.dbms.query_return_all_data("SELECT to_regclass('\"{}\"')".format(view_name))]
+                self.tab5_status.setText(
+                    "Custom Table:\" {} \" Created Successfully, but the data will be overwritten".format(view_name))
+                self.tab5_status.setStyleSheet("background-color: rgba(102, 255, 51, 90%);"
+                                               "color: rgba(0, 0, 0, 100%);"
+                                               )
+                self.dbms.main_sensor_vs_graph_insert(view_name, sensor_x, sensor_y)
+                # update dropdown
+                try:
+                    db_table = self.dbms.return_list_of_vs_graph()
+                except:
+                    db_table = []
+                    print("no data yet")
+
+                self.tab5_graph_select.clear()
+                self.tab5_graph_select.addItems(db_table)
+
+            except TypeError:
+                self.tab5_status.setText("Issue Creating The Custom Table")
+                self.tab5_status.setStyleSheet("QLabel {background-color : red; color : white;}")
+
+        except TypeError:
+
+            self.dbms.execute_query(query)
+            try:
+                test = ["".join(x) for x in
+                        self.dbms.query_return_all_data("SELECT to_regclass('\"{}\"')".format(view_name))]
+                self.tab5_status.setText("Custom Table:\" {} \" Created Successfully".format(view_name))
+                self.tab5_status.setStyleSheet("background-color: rgba(102, 255, 51, 90%);"
+                                               "color: rgba(0, 0, 0, 100%);"
+                                               )
+                self.dbms.main_sensor_vs_graph_insert(view_name, sensor_x, sensor_y)
+                # update dropdown
+                try:
+                    db_table = self.dbms.return_list_of_vs_graph()
+                except:
+                    db_table = []
+                    print("no data yet")
+
+                self.tab5_graph_select.clear()
+                self.tab5_graph_select.addItems(db_table)
+
+            except TypeError:
+                self.tab5_status.setText("Issue Creating The Custom Table")
+                self.tab5_status.setStyleSheet("QLabel {background-color : red; color : white;}")
+
+        view_name = "Temp_Vertical_MAX"
+
+        query_val = {'sx': sensor_x, 'sy': sensor_y, 'vn': view_name}
+
+        base_query = "CREATE VIEW \"{vn}\" AS SELECT serial_number, test_date, test_type, ref_line_number, \"{sx}_reading\", \"{sy}_reading\" " \
+                     "FROM \""+baseview+"\" WHERE (serial_number, \"{sx}_reading\", \"{sy}_reading\") " \
+                     "IN (SELECT serial_number, \"{sx}_reading\", \"{sy}_reading\" " \
+                     "FROM ( SELECT serial_number, \"{sx}_reading\", \"{sy}_reading\", " \
+                     "row_number() over (partition by serial_number " \
+                     "ORDER BY \"{sy}_reading\" DESC,\"{sx}_reading\" DESC) " \
+                     "AS rn " \
+                     "FROM \""+baseview+"\") AS X WHERE rn = 1) " \
+                     "ORDER BY serial_number"
+
+        query = base_query.format(**query_val)
+
+        print(query)
+
+        try:
+            test = ["".join(x) for x in
+                    self.dbms.query_return_all_data("SELECT to_regclass('\"{}\"')".format(view_name))]
+            self.tab5_status.setText("Custom Table {} Already Exists, the data will be overwritten".format(view_name))
+            self.tab5_status.setStyleSheet("QLabel {background-color : red; color : white;}")
+            self.dbms.execute_query("DROP VIEW \"{}\";".format(view_name))
+            self.dbms.execute_query(query)
+            try:
+                test = ["".join(x) for x in
+                        self.dbms.query_return_all_data("SELECT to_regclass('\"{}\"')".format(view_name))]
+                self.tab5_status.setText(
+                    "Custom Table:\" {} \" Created Successfully, but the data will be overwritten".format(view_name))
+                self.tab5_status.setStyleSheet("background-color: rgba(102, 255, 51, 90%);"
+                                               "color: rgba(0, 0, 0, 100%);"
+                                               )
+                self.dbms.main_sensor_vs_graph_insert(view_name, sensor_x, sensor_y)
+                # update dropdown
+                try:
+                    db_table = self.dbms.return_list_of_vs_graph()
+                except:
+                    db_table = []
+                    print("no data yet")
+
+                self.tab5_graph_select.clear()
+                self.tab5_graph_select.addItems(db_table)
+
+            except TypeError:
+                self.tab5_status.setText("Issue Creating The Custom Table")
+                self.tab5_status.setStyleSheet("QLabel {background-color : red; color : white;}")
+
+        except TypeError:
+
+            self.dbms.execute_query(query)
+            try:
+                test = ["".join(x) for x in
+                        self.dbms.query_return_all_data("SELECT to_regclass('\"{}\"')".format(view_name))]
+                self.tab5_status.setText("Custom Table:\" {} \" Created Successfully".format(view_name))
+                self.tab5_status.setStyleSheet("background-color: rgba(102, 255, 51, 90%);"
+                                               "color: rgba(0, 0, 0, 100%);"
+                                               )
+                self.dbms.main_sensor_vs_graph_insert(view_name, sensor_x, sensor_y)
+                # update dropdown
+                try:
+                    db_table = self.dbms.return_list_of_vs_graph()
+                except:
+                    db_table = []
+                    print("no data yet")
+
+                self.tab5_graph_select.clear()
+                self.tab5_graph_select.addItems(db_table)
+
+            except TypeError:
+                self.tab5_status.setText("Issue Creating The Custom Table")
+                self.tab5_status.setStyleSheet("QLabel {background-color : red; color : white;}")
+
     def tab5_create_view(self):
 
         self.dbms.create_main_vs_graph_table()
@@ -1204,7 +1363,7 @@ class SeachEngine_App(QWidget):
         table_y = self.tab5_table_y_select.currentText()
         model = self.tab5_model_select.currentText()
         testType = self.tab5_test_type_select.currentText()
-        view_name = table_x + "_VS_" + table_y + "_" + model + "_" + testType
+        view_name = table_x + "_VS_" + table_y + "_" + testType
 
         query_val = {'tx': table_x, 'ty': table_y,
                      'tt': self.tab5_test_type_select.currentText(), 'vn': view_name,
@@ -1250,6 +1409,7 @@ class SeachEngine_App(QWidget):
                                                "color: rgba(0, 0, 0, 100%);"
                                                )
                 self.dbms.main_sensor_vs_graph_insert(view_name, table_x, table_y)
+
                 # update dropdown
                 try:
                     db_table = self.dbms.return_list_of_vs_graph()
@@ -1259,6 +1419,7 @@ class SeachEngine_App(QWidget):
 
                 self.tab5_graph_select.clear()
                 self.tab5_graph_select.addItems(db_table)
+                self.tab5_create_max_view(table_x, table_y, view_name)
 
             except TypeError:
                 self.tab5_status.setText("Issue Creating The Custom Table")
@@ -1284,6 +1445,7 @@ class SeachEngine_App(QWidget):
 
                 self.tab5_graph_select.clear()
                 self.tab5_graph_select.addItems(db_table)
+                self.tab5_create_max_view(table_x,table_y,view_name)
 
             except TypeError:
                 self.tab5_status.setText("Issue Creating The Custom Table")
@@ -1309,6 +1471,29 @@ class SeachEngine_App(QWidget):
                 "Export Successfully")
         except:
             self.tab5_text_edit_widget.appendPlainText("Failed to Export")
+
+    def tab5_graph_relationship_button_action(self):
+
+        graph_sensor = self.dbms.return_column_names(self.tab5_graph_select.currentText())
+
+        if graph_sensor:
+            self.fig1 = plt.figure(FigureClass=graphFigure)
+            self.fig1.plot_single_table_line_graph(self.tab5_graph_select.currentText(), graph_sensor[4],
+                                                   graph_sensor[5], self.tab5_model_select.currentText())
+        else:
+            self.tab5_text_edit_widget.appendPlainText(
+                "Please Select a Table to Graph")
+
+    def tab5_graph_difference_button_action(self):
+
+        graph_sensor = self.dbms.return_column_names(self.tab5_graph_select.currentText())
+        if graph_sensor:
+            self.fig1 = plt.figure(FigureClass=graphFigure)
+            self.fig1.plot_single_table_line_difference_graph(self.tab5_graph_select.currentText(), graph_sensor[4],
+                                                   graph_sensor[5], self.tab5_model_select.currentText())
+        else:
+            self.tab5_text_edit_widget.appendPlainText(
+                "Please Select a Table to Graph")
 
 
     def tab2_on_model_changed(self):
