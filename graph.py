@@ -395,7 +395,7 @@ class graphFigure(Figure):
             for x in x_legend:
                 x_min_max = x.split('-')
                 if testtype == "All":
-                    query = "SELECT COUNT(*) FROM \"{table1}\" " \
+                    query = "SELECT COUNT(DISTINCT(\"{table1}\".serial_number)) FROM \"{table1}\" " \
                             "INNER JOIN \"{table2}\"" \
                             "ON \"{table1}\".serial_number = \"{table2}\".serial_number  " \
                             "AND \"{table1}\".ref_line_number = \"{table2}\".ref_line_number " \
@@ -411,7 +411,7 @@ class graphFigure(Figure):
                                                                         y_max=y_min_max[1], x_min=x_min_max[0],
                                                                         x_max=x_min_max[1])
                 else:
-                    query = "SELECT COUNT(*) FROM \"{table1}\" " \
+                    query = "SELECT COUNT(DISTINCT(\"{table1}\".serial_number)) FROM \"{table1}\" " \
                                 "INNER JOIN \"{table2}\"" \
                                 "ON \"{table1}\".serial_number = \"{table2}\".serial_number  " \
                                 "AND \"{table1}\".ref_line_number = \"{table2}\".ref_line_number " \
@@ -428,6 +428,7 @@ class graphFigure(Figure):
                                                                           y_max=y_min_max[1], x_min=x_min_max[0],
                                                                           x_max=x_min_max[1])
 
+                print(query)
                 temp = (int(list(self.dbms.query_return_all_data(query))[0][0]))
                 raw_count[y].append(temp)
         for key in raw_count:
