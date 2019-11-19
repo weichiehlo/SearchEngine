@@ -1210,11 +1210,11 @@ class SeachEngine_App(QWidget):
         self.tab4_blacklist_select.addItems(self.dbms.return_all_blacklist())
 
     def tab5_create_max_view(self, sensor_x, sensor_y, baseview):
-        view_name = "Temp_Horizontal_MAX"
+        view_name = "Horizontal_Based_AVG"
 
         query_val = {'sx': sensor_x, 'sy': sensor_y, 'vn': view_name}
 
-        base_query = "CREATE VIEW \"{vn}\" AS SELECT serial_number, test_date, test_type, ref_line_number, \"{sx}_reading\", \"{sy}_reading\" " \
+        base_query = "CREATE VIEW \"{vn}\" AS SELECT DISTINCT(serial_number), test_date, test_type, \"{sx}_reading\", \"{sy}_reading\" " \
                      "FROM \""+baseview+"\" WHERE (serial_number, \"{sx}_reading\", \"{sy}_reading\") " \
                      "IN (SELECT serial_number, \"{sx}_reading\", \"{sy}_reading\" " \
                      "FROM ( SELECT serial_number, \"{sx}_reading\", \"{sy}_reading\", " \
@@ -1226,7 +1226,7 @@ class SeachEngine_App(QWidget):
 
         query = base_query.format(**query_val)
 
-        print(query)
+        #print(query)
 
         try:
             test = ["".join(x) for x in
@@ -1283,11 +1283,11 @@ class SeachEngine_App(QWidget):
                 self.tab5_status.setText("Issue Creating The Custom Table")
                 self.tab5_status.setStyleSheet("QLabel {background-color : red; color : white;}")
 
-        view_name = "Temp_Vertical_MAX"
+        view_name = "Vertical_Based_AVG"
 
         query_val = {'sx': sensor_x, 'sy': sensor_y, 'vn': view_name}
 
-        base_query = "CREATE VIEW \"{vn}\" AS SELECT serial_number, test_date, test_type, ref_line_number, \"{sx}_reading\", \"{sy}_reading\" " \
+        base_query = "CREATE VIEW \"{vn}\" AS SELECT DISTINCT(serial_number), test_date, test_type, \"{sx}_reading\", \"{sy}_reading\" " \
                      "FROM \""+baseview+"\" WHERE (serial_number, \"{sx}_reading\", \"{sy}_reading\") " \
                      "IN (SELECT serial_number, \"{sx}_reading\", \"{sy}_reading\" " \
                      "FROM ( SELECT serial_number, \"{sx}_reading\", \"{sy}_reading\", " \
@@ -1299,7 +1299,7 @@ class SeachEngine_App(QWidget):
 
         query = base_query.format(**query_val)
 
-        print(query)
+        #print(query)
 
         try:
             test = ["".join(x) for x in
@@ -1376,10 +1376,9 @@ class SeachEngine_App(QWidget):
         base_query = "CREATE VIEW \"{vn}\" AS SELECT \"{tx}\".serial_number," \
                      "\"{tx}\".test_date, " \
                      "\"{tx}\".test_type, " \
-                     "\"{tx}\".ref_line_number ," \
-                     "\"{tx}\".reading AS \"{tx}_reading\"," \
-                     "\"{ty}\".reading AS \"{ty}_reading\"" \
-                     "FROM \"{tx}\" " \
+                     "AVG(\"{tx}\".reading) AS \"{tx}_reading\"," \
+                     "AVG(\"{ty}\".reading) AS \"{ty}_reading\"" \
+                     " FROM \"{tx}\" " \
                      "INNER JOIN\"{ty}\" " \
                      "ON \"{tx}\".serial_number = \"{ty}\".serial_number " \
                      "AND \"{tx}\".ref_line_number = \"{ty}\".ref_line_number " \
@@ -1391,14 +1390,16 @@ class SeachEngine_App(QWidget):
         if query_val['tt'] != "All":
             base_query = base_query + sql_dict['type_check']
 
-        query = base_query.format(**query_val) + "ORDER BY \"{}\".reading".format(table_x)
+        base_query = base_query + "GROUP BY(\"{tx}\".serial_number, \"{tx}\".test_date, \"{tx}\".test_type)"
 
+        query = base_query.format(**query_val) + "ORDER BY \"{}\".serial_number".format(table_x)
+        #print(query)
         try:
             test = ["".join(x) for x in
                     self.dbms.query_return_all_data("SELECT to_regclass('\"{}\"')".format(view_name))]
             self.tab5_status.setText("Custom Table {} Already Exists, the data will be overwritten".format(view_name))
             self.tab5_status.setStyleSheet("QLabel {background-color : red; color : white;}")
-            self.dbms.execute_query("DROP VIEW \"{}\";".format(view_name))
+            self.dbms.execute_query("DROP VIEW \"{}\" CASCADE;".format(view_name))
             self.dbms.execute_query(query)
             try:
                 test = ["".join(x) for x in
@@ -1459,7 +1460,7 @@ class SeachEngine_App(QWidget):
         graph_sensor = self.dbms.return_column_names(self.tab5_graph_select.currentText())
         if graph_sensor:
             self.fig1 = plt.figure(FigureClass=graphFigure)
-            self.fig1.plot_scatter(self.tab5_graph_select.currentText(), graph_sensor[4], graph_sensor[5], self.tab5_model_select.currentText())
+            self.fig1.plot_scatter(self.tab5_graph_select.currentText(), graph_sensor[3], graph_sensor[4], self.tab5_model_select.currentText())
         else:
             self.tab5_text_edit_widget.appendPlainText(
                 "Please Select a Table to Graph")
@@ -1478,8 +1479,8 @@ class SeachEngine_App(QWidget):
 
         if graph_sensor:
             self.fig1 = plt.figure(FigureClass=graphFigure)
-            self.fig1.plot_single_table_line_graph(self.tab5_graph_select.currentText(), graph_sensor[4],
-                                                   graph_sensor[5], self.tab5_model_select.currentText())
+            self.fig1.plot_single_table_line_graph(self.tab5_graph_select.currentText(), graph_sensor[3],
+                                                   graph_sensor[4], self.tab5_model_select.currentText())
         else:
             self.tab5_text_edit_widget.appendPlainText(
                 "Please Select a Table to Graph")
@@ -1489,8 +1490,8 @@ class SeachEngine_App(QWidget):
         graph_sensor = self.dbms.return_column_names(self.tab5_graph_select.currentText())
         if graph_sensor:
             self.fig1 = plt.figure(FigureClass=graphFigure)
-            self.fig1.plot_single_table_line_difference_graph(self.tab5_graph_select.currentText(), graph_sensor[4],
-                                                   graph_sensor[5], self.tab5_model_select.currentText())
+            self.fig1.plot_single_table_line_difference_graph(self.tab5_graph_select.currentText(), graph_sensor[3],
+                                                   graph_sensor[4], self.tab5_model_select.currentText())
         else:
             self.tab5_text_edit_widget.appendPlainText(
                 "Please Select a Table to Graph")
@@ -1957,7 +1958,7 @@ class SeachEngine_App(QWidget):
 
             query = base_query.format(**query_val) + "ORDER BY reading"
 
-
+        print(query)
         try:
             test = ["".join(x) for x in self.dbms.query_return_all_data("SELECT to_regclass('\"{}\"')".format(view_name))]
             self.tab2_status.setText("Custom Table {} Already Exists, the data will be overwritten".format(view_name))
