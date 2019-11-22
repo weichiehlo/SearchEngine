@@ -35,7 +35,7 @@ class DataBaseInfo:
         with open(csv_filepath) as csvfile:
             reader = csv.DictReader(csvfile)
             for row in reader:
-                csvlist[row['TableName']]= {'BaseCommand':row['BaseCommand'],'Regex':row['Regex'],'ReferenceBuffer':row['ReferenceBuffer'],'Unit':row['Unit'],"RESULT":"ALL"}
+                csvlist[row['TableName']]= {'BaseCommand':row['BaseCommand'],'Regex':row['Regex'],'ReferenceBuffer':row['ReferenceBuffer'],'Unit':row['Unit'],"RESULT":row["Result"]}
         return csvlist
 
 
@@ -324,8 +324,11 @@ class DataBaseInfo:
             start = 0
         for table_name in csv_info:
             skip = False
-            if csv_info[table_name]["RESULT"] == 'ALL':
-                pass
+            if csv_info[table_name]["RESULT"] == 'FAIL':
+                for x in range(start,end):
+                    if re.search(serial_number+"\\s*Passed",content[x]):
+                        skip = True
+                        break
             elif csv_info[table_name]["RESULT"] == 'PASS':
                 for x in range(start,end):
                     if re.search(serial_number+"\\s*Passed",content[x]):
@@ -333,10 +336,7 @@ class DataBaseInfo:
                     if x == end-1:
                         skip = True
             else:
-                for x in range(start,end):
-                    if re.search(serial_number+"\\s*Passed",content[x]):
-                        skip = True
-                        break
+                pass
             if skip:
                 continue
             if csv_info[table_name]["BaseCommand"] == "$$$BLACKLIST$$$":
