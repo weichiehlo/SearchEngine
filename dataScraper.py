@@ -20,7 +20,7 @@ import csv
 class DataBaseInfo:
 
     def __init__(self,dbname):
-        logname = "Scraper-log_"+datetime.now().strftime("%Y%m%d_%H%M%S")+".log"
+        # logname = "Scraper-log_"+datetime.now().strftime("%Y%m%d_%H%M%S")+".log"
         self.dbms = backend_database.MyDatabase(
             backend_database.POSTGRES, dbname=dbname)
         # logging.basicConfig(filename=logname,
@@ -35,13 +35,17 @@ class DataBaseInfo:
         with open(csv_filepath) as csvfile:
             reader = csv.DictReader(csvfile)
             for row in reader:
-                csvlist[row['TableName']]= {'BaseCommand':row['BaseCommand'],'Regex':row['Regex'],'ReferenceBuffer':row['ReferenceBuffer'],'Unit':row['Unit']}
+                csvlist[row['TableName']]= {'BaseCommand':row['BaseCommand'],'Regex':row['Regex'],'ReferenceBuffer':row['ReferenceBuffer'],'Unit':row['Unit'],"RESULT":row["Result"]}
         return csvlist
 
 
     def tgz_unzip(self, main_folder,model,testtype,start_time,end_time):
         '''This is the main un-zipping function that will determine if the selected folder has subfolders or if it is the main.
          the pass the file path to the "real" unzipping function which will extract all of the required information.'''
+        if not os.path.isdir(main_folder):
+            logging.warning("User Inputed directory does not exist:"+main_folder)
+            print("User Inputed directory does not exist:"+main_folder)
+            return None
         try:
             folders = next(os.walk(main_folder))[1]
         except StopIteration:
@@ -181,6 +185,11 @@ class DataBaseInfo:
         '''Major parsing function, will go through all folders the "extracted" folder. 
         Will also rename the completed parsed folders with a "=done" tag at the end to avvoid re-parsing'''
         # looks for extacted folder
+        
+        if not os.path.isdir(file_path):
+            logging.warning("User Inputed directory does not exist:"+file_path)
+            print("User Inputed directory does not exist:"+file_path)
+            return False
         try:
             file_path += "\\extracted"
             folders = next(os.walk(file_path))[1]
@@ -282,7 +291,7 @@ class DataBaseInfo:
         with open(filepath, "r", errors="ignore") as f:
             for i, x in enumerate(f.readlines(), 1):
                 content[i] = x
-        command_start,command_return = self.check_for_command(csv_info, content)
+        command_start,command_return = self.check_for_command(csv_info, content,serial_number)
         if command_start:
             for table_name in command_return:
                 if command_return[table_name] == "BLACKLIST":
@@ -304,12 +313,32 @@ class DataBaseInfo:
 
 
     @staticmethod
-    def check_for_command(csv_info, content):
+    def check_for_command(csv_info, content,serial_number):
         '''Checks a log for the given command and returns the line number that it occured on.
         used to determine where to start parsing for sensor data.'''
         lines = []
         cmd_set = {}
+        end = len(content)
+        start = end - 5
+        if start < 0:
+            start = 0
         for table_name in csv_info:
+            skip = False
+            if csv_info[table_name]["RESULT"] == 'FAIL':
+                for x in range(start,end):
+                    if re.search(serial_number+"\\s*Passed",content[x]):
+                        skip = True
+                        break
+            elif csv_info[table_name]["RESULT"] == 'PASS':
+                for x in range(start,end):
+                    if re.search(serial_number+"\\s*Passed",content[x]):
+                        break
+                    if x == end-1:
+                        skip = True
+            else:
+                pass
+            if skip:
+                continue
             if csv_info[table_name]["BaseCommand"] == "$$$BLACKLIST$$$":
                 cmd_set[table_name] = "BLACKLIST"
                 continue

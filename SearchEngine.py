@@ -1011,7 +1011,7 @@ class SeachEngine_App(QWidget):
             self.status.setStyleSheet("QLabel {background-color : blue; color : white;}")
             self.status.repaint()
 
-            subprocess.call("cd C:\\Program Files\\PostgreSQL\\11\\bin &&set \"PGPASSWORD=fortinet\"&&pg_restore -C -d postgres -v -h localhost -p 5432 -U postgres "+self.tab1_cur_sqlpath.text(), shell=True)
+            subprocess.call("cd C:\\Program Files\\PostgreSQL\\12\\bin &&set \"PGPASSWORD=fortinet\"&&pg_restore -C -d postgres -v -h localhost -p 5432 -U postgres "+self.tab1_cur_sqlpath.text(), shell=True)
 
             self.text_edit_widget.appendPlainText("The sql file ("+self.tab1_cur_sqlpath.text()+") has been successfully added to the data base")
 
