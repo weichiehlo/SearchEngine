@@ -20,7 +20,7 @@ import csv
 class DataBaseInfo:
 
     def __init__(self,dbname):
-        logname = "Scraper-log_"+datetime.now().strftime("%Y%m%d_%H%M%S")+".log"
+        # logname = "Scraper-log_"+datetime.now().strftime("%Y%m%d_%H%M%S")+".log"
         self.dbms = backend_database.MyDatabase(
             backend_database.POSTGRES, dbname=dbname)
         # logging.basicConfig(filename=logname,
@@ -42,6 +42,10 @@ class DataBaseInfo:
     def tgz_unzip(self, main_folder,model,testtype,start_time,end_time):
         '''This is the main un-zipping function that will determine if the selected folder has subfolders or if it is the main.
          the pass the file path to the "real" unzipping function which will extract all of the required information.'''
+        if not os.path.isdir(main_folder):
+            logging.warning("User Inputed directory does not exist:"+main_folder)
+            print("User Inputed directory does not exist:"+main_folder)
+            return None
         try:
             folders = next(os.walk(main_folder))[1]
         except StopIteration:
@@ -181,6 +185,11 @@ class DataBaseInfo:
         '''Major parsing function, will go through all folders the "extracted" folder. 
         Will also rename the completed parsed folders with a "=done" tag at the end to avvoid re-parsing'''
         # looks for extacted folder
+        
+        if not os.path.isdir(file_path):
+            logging.warning("User Inputed directory does not exist:"+file_path)
+            print("User Inputed directory does not exist:"+file_path)
+            return False
         try:
             file_path += "\\extracted"
             folders = next(os.walk(file_path))[1]
