@@ -240,6 +240,14 @@ class SeachEngine_App(QWidget):
         self.tab1_Unit_label = LabelBox("Please Enter The Unit")
         self.tab1_Unit_label.setFont(font_label)
         self.tab1_Unit = TextBox(self)
+        self.tab1_log_condition_label = LabelBox("Please Select the Log Condition")
+        self.tab1_log_condition_label.setFont(font_label)
+        self.tab1_log_condition_dropdown = ComboBox()
+        self.tab1_log_condition_dropdown.addItems(['ALL', 'PASS', 'FAIL'])
+
+
+
+
 
         self.tab1_from_select = DateBox(self)
         self.tab1_to_select = DateBox(self)
@@ -304,7 +312,13 @@ class SeachEngine_App(QWidget):
         self.tab1.layout.addWidget(self.tab1_ReferenceBuffer, 12, 1, 1, 1)
         self.tab1.layout.addWidget(self.tab1_Unit_label, 13, 0, 1, 1)
         self.tab1.layout.addWidget(self.tab1_Unit, 13, 1, 1, 1)
-        self.tab1.layout.addWidget(self.tab1_export_csv_button, 14, 0, 2, 4)
+
+        self.tab1.layout.addWidget(self.tab1_log_condition_label, 14, 0, 1, 1)
+
+
+        self.tab1.layout.addWidget(self.tab1_log_condition_dropdown, 14, 1, 1, 1)
+
+        self.tab1.layout.addWidget(self.tab1_export_csv_button, 15, 0, 1, 4)
         self.tab1.layout.addWidget(self.tab1_create_section, 16, 0, 2, 3)
 
         self.tab1.layout.addWidget(self.tab1_model_text_label, 18, 0, 1, 1)
@@ -1165,20 +1179,20 @@ class SeachEngine_App(QWidget):
 
                     if os.path.exists('database_create_info.csv'):
                         with open('database_create_info.csv', 'a') as out:
-                            field_names = ['TableName', 'BaseCommand', 'Regex', 'ReferenceBuffer', 'Unit']
+                            field_names = ['TableName', 'BaseCommand', 'Regex', 'ReferenceBuffer', 'Unit', 'Result']
                             csv_out = csv.DictWriter(out, fieldnames=field_names, lineterminator="\n")
                             test = dict(zip(field_names, [self.tab1_table_1_text.text(), self.tab1_base_text.text(),
-                                                          self.tab1_reg_text.text(), self.tab1_ReferenceBuffer.text(), self.tab1_Unit.text()]))
+                                                          self.tab1_reg_text.text(), self.tab1_ReferenceBuffer.text(), self.tab1_Unit.text(), self.tab1_log_condition_dropdown.currentText()]))
                             csv_out.writerow(test)
                     else:
                         with open('database_create_info.csv', 'a') as out:
-                            field_names = ['TableName', 'BaseCommand', 'Regex', 'ReferenceBuffer', 'Unit']
+                            field_names = ['TableName', 'BaseCommand', 'Regex', 'ReferenceBuffer', 'Unit', 'Result']
                             csv_out = csv.DictWriter(out, fieldnames=field_names, lineterminator="\n")
                             csv_out.writeheader()
                             test = dict(zip(field_names, [self.tab1_table_1_text.text(), self.tab1_base_text.text(),
                                                           self.tab1_reg_text.text(),
                                                           self.tab1_ReferenceBuffer.text(),
-                                                          self.tab1_Unit.text()]))
+                                                          self.tab1_Unit.text(),self.tab1_log_condition_dropdown.currentText()]))
                             csv_out.writerow(test)
                     self.text_edit_widget.appendPlainText("Conditions above has been successfully add to the csv file")
                     self.status.setText("Conditions above has been successfully add to the csv file")
@@ -2157,10 +2171,14 @@ class SeachEngine_App(QWidget):
 
         #verify cvs file
         csvlist = []
-        with open('database_create_info.csv') as csvfile:
-            reader = csv.DictReader(csvfile)
-            for row in reader:
-                csvlist.append(row['TableName'])
+        try:
+            with open('database_create_info.csv') as csvfile:
+                reader = csv.DictReader(csvfile)
+                for row in reader:
+                    csvlist.append(row['TableName'])
+        except:
+            self.status.setText("Please Create CSV File first")
+            self.status.setStyleSheet("QLabel {background-color : red; color : white;}")
 
 
         global logfile, start_time
