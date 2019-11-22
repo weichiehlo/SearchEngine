@@ -35,7 +35,7 @@ class DataBaseInfo:
         with open(csv_filepath) as csvfile:
             reader = csv.DictReader(csvfile)
             for row in reader:
-                csvlist[row['TableName']]= {'BaseCommand':row['BaseCommand'],'Regex':row['Regex'],'ReferenceBuffer':row['ReferenceBuffer'],'Unit':row['Unit']}
+                csvlist[row['TableName']]= {'BaseCommand':row['BaseCommand'],'Regex':row['Regex'],'ReferenceBuffer':row['ReferenceBuffer'],'Unit':row['Unit'],"RESULT":"ALL"}
         return csvlist
 
 
@@ -291,7 +291,7 @@ class DataBaseInfo:
         with open(filepath, "r", errors="ignore") as f:
             for i, x in enumerate(f.readlines(), 1):
                 content[i] = x
-        command_start,command_return = self.check_for_command(csv_info, content)
+        command_start,command_return = self.check_for_command(csv_info, content,serial_number)
         if command_start:
             for table_name in command_return:
                 if command_return[table_name] == "BLACKLIST":
@@ -313,12 +313,32 @@ class DataBaseInfo:
 
 
     @staticmethod
-    def check_for_command(csv_info, content):
+    def check_for_command(csv_info, content,serial_number):
         '''Checks a log for the given command and returns the line number that it occured on.
         used to determine where to start parsing for sensor data.'''
         lines = []
         cmd_set = {}
+        end = len(content)
+        start = end - 5
+        if start < 0:
+            start = 0
         for table_name in csv_info:
+            skip = False
+            if csv_info[table_name]["RESULT"] == 'ALL':
+                pass
+            elif csv_info[table_name]["RESULT"] == 'PASS':
+                for x in range(start,end):
+                    if re.search(serial_number+"\\s*Passed",content[x]):
+                        break
+                    if x == end-1:
+                        skip = True
+            else:
+                for x in range(start,end):
+                    if re.search(serial_number+"\\s*Passed",content[x]):
+                        skip = True
+                        break
+            if skip:
+                continue
             if csv_info[table_name]["BaseCommand"] == "$$$BLACKLIST$$$":
                 cmd_set[table_name] = "BLACKLIST"
                 continue
