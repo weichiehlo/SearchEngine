@@ -136,7 +136,6 @@ class SeachEngine_App(QWidget):
 
         # Thread declaration
         self.app_thread = Qapp_thread()
-        self.tab_5_graph_thread = Qtab_5_graph_thread()
 
         # Styling for the title
         self.title = LabelBox_title("Search Engine")
@@ -241,6 +240,14 @@ class SeachEngine_App(QWidget):
         self.tab1_Unit_label = LabelBox("Please Enter The Unit")
         self.tab1_Unit_label.setFont(font_label)
         self.tab1_Unit = TextBox(self)
+        self.tab1_log_condition_label = LabelBox("Please Select the Log Condition")
+        self.tab1_log_condition_label.setFont(font_label)
+        self.tab1_log_condition_dropdown = ComboBox()
+        self.tab1_log_condition_dropdown.addItems(['ALL', 'PASS', 'FAIL'])
+
+
+
+
 
         self.tab1_from_select = DateBox(self)
         self.tab1_to_select = DateBox(self)
@@ -305,7 +312,13 @@ class SeachEngine_App(QWidget):
         self.tab1.layout.addWidget(self.tab1_ReferenceBuffer, 12, 1, 1, 1)
         self.tab1.layout.addWidget(self.tab1_Unit_label, 13, 0, 1, 1)
         self.tab1.layout.addWidget(self.tab1_Unit, 13, 1, 1, 1)
-        self.tab1.layout.addWidget(self.tab1_export_csv_button, 14, 0, 2, 4)
+
+        self.tab1.layout.addWidget(self.tab1_log_condition_label, 14, 0, 1, 1)
+
+
+        self.tab1.layout.addWidget(self.tab1_log_condition_dropdown, 14, 1, 1, 1)
+
+        self.tab1.layout.addWidget(self.tab1_export_csv_button, 15, 0, 1, 4)
         self.tab1.layout.addWidget(self.tab1_create_section, 16, 0, 2, 3)
 
         self.tab1.layout.addWidget(self.tab1_model_text_label, 18, 0, 1, 1)
@@ -450,7 +463,8 @@ class SeachEngine_App(QWidget):
         self.tab2_graph_interval_txt = TextBox(self)
         self.tab2_graph_interval_txt.setPlaceholderText("Interval")
 
-        self.tab2_checkBox = CheckBox("Per SN MAX Value?")
+        self.tab2_max_checkBox = CheckBox("Per SN MAX Value?")
+        self.tab2_avg_checkBox = CheckBox("Per SN AVG Value?")
 
 
 
@@ -478,7 +492,8 @@ class SeachEngine_App(QWidget):
 
         self.tab2.layout.addWidget(self.tab2_save_view_label, 14, 0, 1, 1)
         self.tab2.layout.addWidget(self.tab2_save_view_txt, 14, 1, 1, 6)
-        self.tab2.layout.addWidget(self.tab2_checkBox, 15, 1, 1, 6)
+        self.tab2.layout.addWidget(self.tab2_max_checkBox, 15, 1, 1, 1)
+        self.tab2.layout.addWidget(self.tab2_avg_checkBox, 15, 2, 1, 1)
         self.tab2.layout.addWidget(self.tab2_view_table_button, 16, 0, 1, 6)
         self.tab2.layout.addWidget(self.tab2_create_button, 17, 0, 1, 6)
 
@@ -499,11 +514,11 @@ class SeachEngine_App(QWidget):
         self.tab2_view_table_button.clicked.connect(self.tab2_preview_view)
 
 
-        db_table = []        
+        db_table = []
         try:
             db_table = db_table + [''.join(item) for item in self.dbms.return_all_model()]
         except TypeError as e:
-            print("No data")
+            print("No data tab2")
         self.tab2_model_select.clear()
         self.tab2_model_select.addItems(db_table)
 
@@ -534,6 +549,8 @@ class SeachEngine_App(QWidget):
         self.tab2_from_select.setDate(QDate(1999, 1, 1))
         self.tab2_to_select.setDate(QDate.currentDate())
 
+        self.tab2_max_checkBox.stateChanged.connect(self.onStateChange)
+        self.tab2_avg_checkBox.stateChanged.connect(self.onStateChange)
 
 #tab3
 
@@ -729,10 +746,10 @@ class SeachEngine_App(QWidget):
         self.tab5_model_select_label = LabelBox("Please Select The Model")
         self.tab5_model_select_label.setFont(font_label)
 
-        self.tab5_table_x_select_label = LabelBox("Please Select The Table (Verticle)")
+        self.tab5_table_x_select_label = LabelBox("Please Select The Table (Horizontal)")
         self.tab5_table_x_select_label.setFont(font_label)
 
-        self.tab5_table_y_select_label = LabelBox("Please Select The Table for (Horizontal)")
+        self.tab5_table_y_select_label = LabelBox("Please Select The Table for (Verticle)")
         self.tab5_table_y_select_label.setFont(font_label)
 
         self.tab5_test_type_select_label = LabelBox("Please Select Test Type")
@@ -757,8 +774,16 @@ class SeachEngine_App(QWidget):
         self.tab5_status.setFont(font_status)
         self.tab5_status.setAlignment(Qt.AlignCenter)
 
+        self.tab5_sensor_relationship_graph_button = PushBut(self)
+        self.tab5_sensor_relationship_graph_button.setText("Graph Relationship")
+        self.tab5_sensor_relationship_graph_button.setFont(font_but)
+
+        self.tab5_sensor_difference_graph_button = PushBut(self)
+        self.tab5_sensor_difference_graph_button.setText("Graph Difference")
+        self.tab5_sensor_difference_graph_button.setFont(font_but)
+
         self.tab5_sensor_graph_button = PushBut(self)
-        self.tab5_sensor_graph_button.setText("Graph")
+        self.tab5_sensor_graph_button.setText("Graph Scatter")
         self.tab5_sensor_graph_button.setFont(font_but)
 
         self.tab5_sensor_export_button = PushBut(self)
@@ -786,8 +811,10 @@ class SeachEngine_App(QWidget):
         self.tab5.layout.addWidget(self.tab5_graph_select_label, 15, 0, 1, 2)
         self.tab5.layout.addWidget(self.tab5_graph_select, 15, 2, 1, 4)
         self.tab5.layout.addWidget(self.tab5_sensor_create_button, 16, 0, 1, 2)
-        self.tab5.layout.addWidget(self.tab5_sensor_graph_button, 16, 2, 1, 2)
-        self.tab5.layout.addWidget(self.tab5_sensor_export_button, 16, 4, 1, 2)
+        self.tab5.layout.addWidget(self.tab5_sensor_relationship_graph_button, 16, 2, 1, 1)
+        self.tab5.layout.addWidget(self.tab5_sensor_difference_graph_button, 16, 3, 1, 1)
+        self.tab5.layout.addWidget(self.tab5_sensor_graph_button, 16, 4, 1, 1)
+        self.tab5.layout.addWidget(self.tab5_sensor_export_button, 16, 5, 1, 1)
 
 
         self.tab5.setLayout(self.tab5.layout)
@@ -832,6 +859,8 @@ class SeachEngine_App(QWidget):
         self.tab5_sensor_create_button.clicked.connect(self.tab5_create_view)
         self.tab5_sensor_export_button.clicked.connect(self.tab5_export_button_action)
         self.tab5_sensor_graph_button.clicked.connect(self.tab5_graph_button_action)
+        self.tab5_sensor_relationship_graph_button.clicked.connect(self.tab5_graph_relationship_button_action)
+        self.tab5_sensor_difference_graph_button.clicked.connect(self.tab5_graph_difference_button_action)
 
         # Tab 6 start
         self.tab6_title = LabelBox_title("Sensor vs Sensor Graphical Interface")
@@ -960,6 +989,15 @@ class SeachEngine_App(QWidget):
         self.tab6_test_type_select.currentTextChanged.connect(self.tab6_on_test_type_changed)
         self.tab6_sensor_graph_button.clicked.connect(self.tab6_graph_button_action)
 
+    # Check all on-click logic
+    @pyqtSlot(int)
+    def onStateChange(self, state):
+        if self.sender() == self.tab2_max_checkBox:
+            if state == Qt.Checked:
+                self.tab2_avg_checkBox.setChecked(False)
+        elif self.sender() == self.tab2_avg_checkBox:
+            if state == Qt.Checked:
+                self.tab2_max_checkBox.setChecked(False)
 
     def restore_db_action(self):
 
@@ -1141,20 +1179,20 @@ class SeachEngine_App(QWidget):
 
                     if os.path.exists('database_create_info.csv'):
                         with open('database_create_info.csv', 'a') as out:
-                            field_names = ['TableName', 'BaseCommand', 'Regex', 'ReferenceBuffer', 'Unit']
+                            field_names = ['TableName', 'BaseCommand', 'Regex', 'ReferenceBuffer', 'Unit', 'Result']
                             csv_out = csv.DictWriter(out, fieldnames=field_names, lineterminator="\n")
                             test = dict(zip(field_names, [self.tab1_table_1_text.text(), self.tab1_base_text.text(),
-                                                          self.tab1_reg_text.text(), self.tab1_ReferenceBuffer.text(), self.tab1_Unit.text()]))
+                                                          self.tab1_reg_text.text(), self.tab1_ReferenceBuffer.text(), self.tab1_Unit.text(), self.tab1_log_condition_dropdown.currentText()]))
                             csv_out.writerow(test)
                     else:
                         with open('database_create_info.csv', 'a') as out:
-                            field_names = ['TableName', 'BaseCommand', 'Regex', 'ReferenceBuffer', 'Unit']
+                            field_names = ['TableName', 'BaseCommand', 'Regex', 'ReferenceBuffer', 'Unit', 'Result']
                             csv_out = csv.DictWriter(out, fieldnames=field_names, lineterminator="\n")
                             csv_out.writeheader()
                             test = dict(zip(field_names, [self.tab1_table_1_text.text(), self.tab1_base_text.text(),
                                                           self.tab1_reg_text.text(),
                                                           self.tab1_ReferenceBuffer.text(),
-                                                          self.tab1_Unit.text()]))
+                                                          self.tab1_Unit.text(),self.tab1_log_condition_dropdown.currentText()]))
                             csv_out.writerow(test)
                     self.text_edit_widget.appendPlainText("Conditions above has been successfully add to the csv file")
                     self.status.setText("Conditions above has been successfully add to the csv file")
@@ -1185,42 +1223,24 @@ class SeachEngine_App(QWidget):
         self.tab4_blacklist_select.clear()
         self.tab4_blacklist_select.addItems(self.dbms.return_all_blacklist())
 
-    def tab5_create_view(self):
+    def tab5_create_max_view(self, sensor_x, sensor_y, baseview):
+        view_name = "Horizontal_Based_AVG"
 
-        self.dbms.create_main_vs_graph_table()
-        table_x = self.tab5_table_x_select.currentText()
-        table_y = self.tab5_table_y_select.currentText()
-        model = self.tab5_model_select.currentText()
-        testType = self.tab5_test_type_select.currentText()
-        view_name = table_x + "_VS_" + table_y + "_" + model + "_" + testType
+        query_val = {'sx': sensor_x, 'sy': sensor_y, 'vn': view_name}
 
-        query_val = {'tx': table_x, 'ty': table_y,
-                     'tt': self.tab5_test_type_select.currentText(), 'vn': view_name,
-                     'model': self.tab5_model_select.currentText()}
+        base_query = "CREATE VIEW \"{vn}\" AS SELECT DISTINCT(serial_number), test_date, test_type, \"{sx}_reading\", \"{sy}_reading\" " \
+                     "FROM \""+baseview+"\" WHERE (serial_number, \"{sx}_reading\", \"{sy}_reading\") " \
+                     "IN (SELECT serial_number, \"{sx}_reading\", \"{sy}_reading\" " \
+                     "FROM ( SELECT serial_number, \"{sx}_reading\", \"{sy}_reading\", " \
+                     "row_number() over (partition by serial_number " \
+                     "ORDER BY \"{sx}_reading\" DESC, \"{sy}_reading\" DESC) " \
+                     "AS rn " \
+                     "FROM \""+baseview+"\") AS X WHERE rn = 1) " \
+                     "ORDER BY serial_number"
 
-        sql_dict = {
-            'type_check': "AND \"{tx}\".test_type = '{tt}'"
-        }
+        query = base_query.format(**query_val)
 
-        base_query = "CREATE VIEW \"{vn}\" AS SELECT \"{tx}\".serial_number," \
-                     "\"{tx}\".test_date, " \
-                     "\"{tx}\".test_type, " \
-                     "\"{tx}\".ref_line_number ," \
-                     "\"{tx}\".reading AS \"{tx}_reading\"," \
-                     "\"{ty}\".reading AS \"{ty}_reading\"" \
-                     "FROM \"{tx}\" " \
-                     "INNER JOIN\"{ty}\" " \
-                     "ON \"{tx}\".serial_number = \"{ty}\".serial_number " \
-                     "AND \"{tx}\".ref_line_number = \"{ty}\".ref_line_number " \
-                     "AND \"{tx}\".test_date = \"{ty}\".test_date " \
-                     "WHERE \"{tx}\".reading IS NOT NULL " \
-                     "AND \"{ty}\".reading IS NOT NULL " \
-                     "AND \"{tx}\".serial_number LIKE '{model}%%'"
-
-        if query_val['tt'] != "All":
-            base_query = base_query + sql_dict['type_check']
-
-        query = base_query.format(**query_val) + "ORDER BY \"{}\".reading".format(table_x)
+        #print(query)
 
         try:
             test = ["".join(x) for x in
@@ -1237,7 +1257,7 @@ class SeachEngine_App(QWidget):
                 self.tab5_status.setStyleSheet("background-color: rgba(102, 255, 51, 90%);"
                                                "color: rgba(0, 0, 0, 100%);"
                                                )
-                self.dbms.main_sensor_vs_graph_insert(view_name, table_x, table_y)
+                self.dbms.main_sensor_vs_graph_insert(view_name, sensor_x, sensor_y)
                 # update dropdown
                 try:
                     db_table = self.dbms.return_list_of_vs_graph()
@@ -1247,6 +1267,174 @@ class SeachEngine_App(QWidget):
 
                 self.tab5_graph_select.clear()
                 self.tab5_graph_select.addItems(db_table)
+
+            except TypeError:
+                self.tab5_status.setText("Issue Creating The Custom Table")
+                self.tab5_status.setStyleSheet("QLabel {background-color : red; color : white;}")
+
+        except TypeError:
+
+            self.dbms.execute_query(query)
+            try:
+                test = ["".join(x) for x in
+                        self.dbms.query_return_all_data("SELECT to_regclass('\"{}\"')".format(view_name))]
+                self.tab5_status.setText("Custom Table:\" {} \" Created Successfully".format(view_name))
+                self.tab5_status.setStyleSheet("background-color: rgba(102, 255, 51, 90%);"
+                                               "color: rgba(0, 0, 0, 100%);"
+                                               )
+                self.dbms.main_sensor_vs_graph_insert(view_name, sensor_x, sensor_y)
+                # update dropdown
+                try:
+                    db_table = self.dbms.return_list_of_vs_graph()
+                except:
+                    db_table = []
+                    print("no data yet")
+
+                self.tab5_graph_select.clear()
+                self.tab5_graph_select.addItems(db_table)
+
+            except TypeError:
+                self.tab5_status.setText("Issue Creating The Custom Table")
+                self.tab5_status.setStyleSheet("QLabel {background-color : red; color : white;}")
+
+        view_name = "Vertical_Based_AVG"
+
+        query_val = {'sx': sensor_x, 'sy': sensor_y, 'vn': view_name}
+
+        base_query = "CREATE VIEW \"{vn}\" AS SELECT DISTINCT(serial_number), test_date, test_type, \"{sx}_reading\", \"{sy}_reading\" " \
+                     "FROM \""+baseview+"\" WHERE (serial_number, \"{sx}_reading\", \"{sy}_reading\") " \
+                     "IN (SELECT serial_number, \"{sx}_reading\", \"{sy}_reading\" " \
+                     "FROM ( SELECT serial_number, \"{sx}_reading\", \"{sy}_reading\", " \
+                     "row_number() over (partition by serial_number " \
+                     "ORDER BY \"{sy}_reading\" DESC,\"{sx}_reading\" DESC) " \
+                     "AS rn " \
+                     "FROM \""+baseview+"\") AS X WHERE rn = 1) " \
+                     "ORDER BY serial_number"
+
+        query = base_query.format(**query_val)
+
+        #print(query)
+
+        try:
+            test = ["".join(x) for x in
+                    self.dbms.query_return_all_data("SELECT to_regclass('\"{}\"')".format(view_name))]
+            self.tab5_status.setText("Custom Table {} Already Exists, the data will be overwritten".format(view_name))
+            self.tab5_status.setStyleSheet("QLabel {background-color : red; color : white;}")
+            self.dbms.execute_query("DROP VIEW \"{}\";".format(view_name))
+            self.dbms.execute_query(query)
+            try:
+                test = ["".join(x) for x in
+                        self.dbms.query_return_all_data("SELECT to_regclass('\"{}\"')".format(view_name))]
+                self.tab5_status.setText(
+                    "Custom Table:\" {} \" Created Successfully, but the data will be overwritten".format(view_name))
+                self.tab5_status.setStyleSheet("background-color: rgba(102, 255, 51, 90%);"
+                                               "color: rgba(0, 0, 0, 100%);"
+                                               )
+                self.dbms.main_sensor_vs_graph_insert(view_name, sensor_x, sensor_y)
+                # update dropdown
+                try:
+                    db_table = self.dbms.return_list_of_vs_graph()
+                except:
+                    db_table = []
+                    print("no data yet")
+
+                self.tab5_graph_select.clear()
+                self.tab5_graph_select.addItems(db_table)
+
+            except TypeError:
+                self.tab5_status.setText("Issue Creating The Custom Table")
+                self.tab5_status.setStyleSheet("QLabel {background-color : red; color : white;}")
+
+        except TypeError:
+
+            self.dbms.execute_query(query)
+            try:
+                test = ["".join(x) for x in
+                        self.dbms.query_return_all_data("SELECT to_regclass('\"{}\"')".format(view_name))]
+                self.tab5_status.setText("Custom Table:\" {} \" Created Successfully".format(view_name))
+                self.tab5_status.setStyleSheet("background-color: rgba(102, 255, 51, 90%);"
+                                               "color: rgba(0, 0, 0, 100%);"
+                                               )
+                self.dbms.main_sensor_vs_graph_insert(view_name, sensor_x, sensor_y)
+                # update dropdown
+                try:
+                    db_table = self.dbms.return_list_of_vs_graph()
+                except:
+                    db_table = []
+                    print("no data yet")
+
+                self.tab5_graph_select.clear()
+                self.tab5_graph_select.addItems(db_table)
+
+            except TypeError:
+                self.tab5_status.setText("Issue Creating The Custom Table")
+                self.tab5_status.setStyleSheet("QLabel {background-color : red; color : white;}")
+
+    def tab5_create_view(self):
+
+        self.dbms.create_main_vs_graph_table()
+        table_x = self.tab5_table_x_select.currentText()
+        table_y = self.tab5_table_y_select.currentText()
+        model = self.tab5_model_select.currentText()
+        testType = self.tab5_test_type_select.currentText()
+        view_name = table_x + "_VS_" + table_y + "_" + testType
+
+        query_val = {'tx': table_x, 'ty': table_y,
+                     'tt': self.tab5_test_type_select.currentText(), 'vn': view_name,
+                     'model': self.tab5_model_select.currentText()}
+
+        sql_dict = {
+            'type_check': "AND \"{tx}\".test_type = '{tt}'"
+        }
+
+        base_query = "CREATE VIEW \"{vn}\" AS SELECT \"{tx}\".serial_number," \
+                     "\"{tx}\".test_date, " \
+                     "\"{tx}\".test_type, " \
+                     "AVG(\"{tx}\".reading) AS \"{tx}_reading\"," \
+                     "AVG(\"{ty}\".reading) AS \"{ty}_reading\"" \
+                     " FROM \"{tx}\" " \
+                     "INNER JOIN\"{ty}\" " \
+                     "ON \"{tx}\".serial_number = \"{ty}\".serial_number " \
+                     "AND \"{tx}\".ref_line_number = \"{ty}\".ref_line_number " \
+                     "AND \"{tx}\".test_date = \"{ty}\".test_date " \
+                     "WHERE \"{tx}\".reading IS NOT NULL " \
+                     "AND \"{ty}\".reading IS NOT NULL " \
+                     "AND \"{tx}\".serial_number LIKE '{model}%%'"
+
+        if query_val['tt'] != "All":
+            base_query = base_query + sql_dict['type_check']
+
+        base_query = base_query + "GROUP BY(\"{tx}\".serial_number, \"{tx}\".test_date, \"{tx}\".test_type)"
+
+        query = base_query.format(**query_val) + "ORDER BY \"{}\".serial_number".format(table_x)
+        #print(query)
+        try:
+            test = ["".join(x) for x in
+                    self.dbms.query_return_all_data("SELECT to_regclass('\"{}\"')".format(view_name))]
+            self.tab5_status.setText("Custom Table {} Already Exists, the data will be overwritten".format(view_name))
+            self.tab5_status.setStyleSheet("QLabel {background-color : red; color : white;}")
+            self.dbms.execute_query("DROP VIEW \"{}\" CASCADE;".format(view_name))
+            self.dbms.execute_query(query)
+            try:
+                test = ["".join(x) for x in
+                        self.dbms.query_return_all_data("SELECT to_regclass('\"{}\"')".format(view_name))]
+                self.tab5_status.setText(
+                    "Custom Table:\" {} \" Created Successfully, but the data will be overwritten".format(view_name))
+                self.tab5_status.setStyleSheet("background-color: rgba(102, 255, 51, 90%);"
+                                               "color: rgba(0, 0, 0, 100%);"
+                                               )
+                self.dbms.main_sensor_vs_graph_insert(view_name, table_x, table_y)
+
+                # update dropdown
+                try:
+                    db_table = self.dbms.return_list_of_vs_graph()
+                except:
+                    db_table = []
+                    print("no data yet")
+
+                self.tab5_graph_select.clear()
+                self.tab5_graph_select.addItems(db_table)
+                self.tab5_create_max_view(table_x, table_y, view_name)
 
             except TypeError:
                 self.tab5_status.setText("Issue Creating The Custom Table")
@@ -1272,6 +1460,7 @@ class SeachEngine_App(QWidget):
 
                 self.tab5_graph_select.clear()
                 self.tab5_graph_select.addItems(db_table)
+                self.tab5_create_max_view(table_x,table_y,view_name)
 
             except TypeError:
                 self.tab5_status.setText("Issue Creating The Custom Table")
@@ -1282,61 +1471,13 @@ class SeachEngine_App(QWidget):
 
     def tab5_graph_button_action(self):
 
-        try:
-            self.tab_5_graph_thread.sig1.disconnect()
-            self.tab5_sig.disconnect()
-        except:
-            pass
-
-        # Establish the connection between Main signal (tab1_sig) to slot (start_source)
-        try:
-            self.tab5_sig.connect(self.tab_5_graph_thread.start_source)
-        except TypeError as e:
-            print(e)
-        except AttributeError as e:
-            print(e)
-        except ValueError as e:
-            print(e)
-        except IOError as e:
-            print(e)
-        # Change the status label box
-        self.tab5_status.setText("Collecting Graphing Data, Please Wait.")
-        self.tab5_status.setStyleSheet("background-color: rgba(153, 204, 255, 90%);"
-                                       "color: rgba(0, 0, 0, 100%);"
-                                       )
-
         graph_sensor = self.dbms.return_column_names(self.tab5_graph_select.currentText())
-        print(self.tab5_graph_select.currentText())
-        print(graph_sensor)
-        graph_dict = {'table_name':self.tab5_graph_select.currentText(),'sensor_x':graph_sensor[4],'sensor_y':graph_sensor[5],'model':self.tab5_model_select.currentText()}
-        self.tab5_sig.emit(graph_dict)
-
-        # Establish the connection from thread signal back to main (to know when the thread is finished running)
-        # tab5_end_info will be executed when the thread is finished
-
-        self.tab_5_graph_thread.sig1.connect(self.tab5_end_info)
-
-        # Start the thread
-        self.tab_5_graph_thread.start()
-        self.tab5_sensor_graph_button.setEnabled(False)
-        self.tab5_sensor_graph_button.setText("Calculating!!!")
-        self.tab_5_graph_thread.running = False
-
-    def tab5_end_info(self, info):
-
-        print("Test Finished! {} ".format(info))
-
-        self.tab5_text_edit_widget.appendPlainText("-----Please Check the Pop Up Graph-----")
-
-        # Set the status label box
-
-        self.tab5_status.setText("Process Ended Successfully")
-        self.tab5_status.setStyleSheet("background-color: rgba(102, 255, 51, 90%);"
-                                       "color: rgba(0, 0, 0, 100%);"
-                                       )
-        # Re-enabling the start button
-        self.tab5_sensor_graph_button.setEnabled(True)
-        self.tab5_sensor_graph_button.setText("Graph")
+        if graph_sensor:
+            self.fig1 = plt.figure(FigureClass=graphFigure)
+            self.fig1.plot_scatter(self.tab5_graph_select.currentText(), graph_sensor[3], graph_sensor[4], self.tab5_model_select.currentText())
+        else:
+            self.tab5_text_edit_widget.appendPlainText(
+                "Please Select a Table to Graph")
 
     def tab5_export_button_action(self):
         try:
@@ -1345,6 +1486,29 @@ class SeachEngine_App(QWidget):
                 "Export Successfully")
         except:
             self.tab5_text_edit_widget.appendPlainText("Failed to Export")
+
+    def tab5_graph_relationship_button_action(self):
+
+        graph_sensor = self.dbms.return_column_names(self.tab5_graph_select.currentText())
+
+        if graph_sensor:
+            self.fig1 = plt.figure(FigureClass=graphFigure)
+            self.fig1.plot_single_table_line_graph(self.tab5_graph_select.currentText(), graph_sensor[3],
+                                                   graph_sensor[4], self.tab5_model_select.currentText())
+        else:
+            self.tab5_text_edit_widget.appendPlainText(
+                "Please Select a Table to Graph")
+
+    def tab5_graph_difference_button_action(self):
+
+        graph_sensor = self.dbms.return_column_names(self.tab5_graph_select.currentText())
+        if graph_sensor:
+            self.fig1 = plt.figure(FigureClass=graphFigure)
+            self.fig1.plot_single_table_line_difference_graph(self.tab5_graph_select.currentText(), graph_sensor[3],
+                                                   graph_sensor[4], self.tab5_model_select.currentText())
+        else:
+            self.tab5_text_edit_widget.appendPlainText(
+                "Please Select a Table to Graph")
 
 
     def tab2_on_model_changed(self):
@@ -1648,21 +1812,31 @@ class SeachEngine_App(QWidget):
                 "FROM \"{t1}\" " \
                 "WHERE \"{t1}\".reading IS NOT NULL "
 
-        unique_base_query_top = "SELECT \"Table1\".serial_number," \
-                                "\"{t1}\".test_date, " \
-                                "\"{t1}\".test_type, " \
-                                "\"{t1}\".line_number ," \
-                                "\"{t1}\".alarm ," \
-                                "\"{t1}\".reading " \
-                                "FROM (SELECT \"{t1}\".serial_number, MAX(\"{t1}\".reading) AS reading " \
-                                "FROM \"{t1}\" GROUP BY serial_number) AS \"Table1\" " \
-                                "INNER JOIN \"{t1}\" " \
-                                "ON \"Table1\".reading = \"{t1}\".reading " \
-                                "AND \"Table1\".serial_number = \"{t1}\".serial_number " \
-                                "WHERE \"{t1}\".reading IS NOT NULL "
 
 
-        if self.tab2_checkBox.checkState():
+        if self.tab2_max_checkBox.checkState():
+            unique_base_query_top = "SELECT DISTINCT(\"Table1\".serial_number)," \
+                                    "\"{t1}\".test_type, " \
+                                    "\"{t1}\".alarm ," \
+                                    "\"Table1\".reading " \
+                                    "FROM (SELECT \"{t1}\".serial_number, MAX(\"{t1}\".reading) AS reading " \
+                                    "FROM \"{t1}\" GROUP BY serial_number) AS \"Table1\" " \
+                                    "INNER JOIN \"{t1}\" " \
+                                    "ON \"Table1\".serial_number = \"{t1}\".serial_number " \
+                                    "WHERE \"{t1}\".reading IS NOT NULL "
+        elif self.tab2_avg_checkBox.checkState():
+            unique_base_query_top = "SELECT DISTINCT(\"Table1\".serial_number)," \
+                                    "\"{t1}\".test_type, " \
+                                    "\"{t1}\".alarm ," \
+                                    "\"Table1\".reading " \
+                                    "FROM (SELECT \"{t1}\".serial_number, AVG(\"{t1}\".reading) AS reading " \
+                                    "FROM \"{t1}\" GROUP BY serial_number) AS \"Table1\" " \
+                                    "INNER JOIN \"{t1}\" " \
+                                    "ON \"Table1\".serial_number = \"{t1}\".serial_number " \
+                                    "WHERE \"{t1}\".reading IS NOT NULL "
+
+
+        if self.tab2_max_checkBox.checkState() or self.tab2_avg_checkBox.checkState():
             if query_val['low'] and query_val['high']:
                 unique_base_query_top = unique_base_query_top + sql_dict['date_check']
             if query_val['sn_low'] and query_val['sn_high']:
@@ -1671,7 +1845,9 @@ class SeachEngine_App(QWidget):
                 unique_base_query_top = unique_base_query_top + sql_dict['type_check']
             unique_base_query_top = unique_base_query_top + sql_dict['model_check']
 
-            query = unique_base_query_top.format(**query_val)  + " ORDER BY reading"
+            if self.tab2_max_checkBox.checkState() or self.tab2_avg_checkBox.checkState():
+                query = unique_base_query_top.format(**query_val) + " ORDER BY reading, \"Table1\".serial_number"
+
 
         else:
             if query_val['low'] and query_val['high']:
@@ -1684,9 +1860,13 @@ class SeachEngine_App(QWidget):
 
             query = base_query.format(**query_val)+ "ORDER BY reading"
 
+        if self.tab2_max_checkBox.checkState() or self.tab2_avg_checkBox.checkState():
+            t_c = ['Serial Number', 'Test Type', table1 + ' Alarm',
+                   table1 + ' Reading']
+        else:
+            t_c = ['Serial Number', 'Test Date', 'Test Type', table1 + ' LineNumber', table1 + ' Alarm',
+                   table1 + ' Reading']
 
-        t_c = ['Serial Number', 'Test Date', 'Test Type', table1 + ' LineNumber', table1 + ' Alarm',
-               table1 + ' Reading']
         t_l = len(t_c)
         # create the view
         self.tab2_tableWidget.setColumnCount(t_l)
@@ -1748,20 +1928,29 @@ class SeachEngine_App(QWidget):
                 "FROM \"{t1}\" " \
                 "WHERE \"{t1}\".reading IS NOT NULL "
 
-        unique_base_query_top = "CREATE VIEW \"{vn}\" AS SELECT \"Table1\".serial_number," \
-                                "\"{t1}\".test_date, " \
-                                "\"{t1}\".test_type, " \
-                                "\"{t1}\".line_number ," \
-                                "\"{t1}\".alarm ," \
-                                "\"{t1}\".reading " \
-                                "FROM (SELECT \"{t1}\".serial_number, MAX(\"{t1}\".reading) AS reading " \
-                                "FROM \"{t1}\" GROUP BY serial_number) AS \"Table1\" " \
-                                "INNER JOIN \"{t1}\" " \
-                                "ON \"Table1\".reading = \"{t1}\".reading " \
-                                "AND \"Table1\".serial_number = \"{t1}\".serial_number " \
-                                "WHERE \"{t1}\".reading IS NOT NULL "
+        if self.tab2_max_checkBox.checkState():
+            unique_base_query_top = "CREATE VIEW \"{vn}\" AS SELECT DISTINCT(\"Table1\".serial_number)," \
+                                    "\"{t1}\".test_type, " \
+                                    "\"{t1}\".alarm ," \
+                                    "\"Table1\".reading " \
+                                    "FROM (SELECT \"{t1}\".serial_number, MAX(\"{t1}\".reading) AS reading " \
+                                    "FROM \"{t1}\" GROUP BY serial_number) AS \"Table1\" " \
+                                    "INNER JOIN \"{t1}\" " \
+                                    "ON \"Table1\".serial_number = \"{t1}\".serial_number " \
+                                    "WHERE \"{t1}\".reading IS NOT NULL "
 
-        if self.tab2_checkBox.checkState():
+        elif self.tab2_avg_checkBox.checkState():
+            unique_base_query_top = "CREATE VIEW \"{vn}\" AS SELECT DISTINCT(\"Table1\".serial_number)," \
+                                    "\"{t1}\".test_type, " \
+                                    "\"{t1}\".alarm ," \
+                                    "\"Table1\".reading " \
+                                    "FROM (SELECT \"{t1}\".serial_number, AVG(\"{t1}\".reading) AS reading " \
+                                    "FROM \"{t1}\" GROUP BY serial_number) AS \"Table1\" " \
+                                    "INNER JOIN \"{t1}\" " \
+                                    "ON \"Table1\".serial_number = \"{t1}\".serial_number " \
+                                    "WHERE \"{t1}\".reading IS NOT NULL "
+
+        if self.tab2_max_checkBox.checkState() or self.tab2_avg_checkBox.checkState():
             if query_val['low'] and query_val['high']:
                 unique_base_query_top = unique_base_query_top + sql_dict['date_check']
             if query_val['sn_low'] and query_val['sn_high']:
@@ -1770,7 +1959,7 @@ class SeachEngine_App(QWidget):
                 unique_base_query_top = unique_base_query_top + sql_dict['type_check']
             unique_base_query_top = unique_base_query_top + sql_dict['model_check']
 
-            query = unique_base_query_top.format(**query_val) +" ORDER BY reading"
+            query = unique_base_query_top.format(**query_val) +" ORDER BY reading, \"Table1\".serial_number"
 
         else:
             if query_val['low'] and query_val['high']:
@@ -1783,7 +1972,7 @@ class SeachEngine_App(QWidget):
 
             query = base_query.format(**query_val) + "ORDER BY reading"
 
-
+        print(query)
         try:
             test = ["".join(x) for x in self.dbms.query_return_all_data("SELECT to_regclass('\"{}\"')".format(view_name))]
             self.tab2_status.setText("Custom Table {} Already Exists, the data will be overwritten".format(view_name))
@@ -1855,12 +2044,18 @@ class SeachEngine_App(QWidget):
                 self.tab2_custom_view_select.addItems(self.dbms.return_list_of_views())
 
                 self.tab3_sensor_select.clear()
-                self.tab3_sensor_select.addItems(self.dbms.return_list_of_graph())
+                try:
+                    self.tab3_sensor_select.addItems(self.dbms.return_list_of_graph())
+                except TypeError:
+                    print("NOOO DATA YET")
                 db_table = []
                 db_table = db_table + [''.join(item) for item in self.dbms.return_all_model()]
                 self.tab3_db_select.setCurrentIndex(db_table.index(self.tab2_model_select.currentText()))
                 self.tab3_sensor_select.clear()
-                self.tab3_sensor_select.addItems(self.dbms.return_list_of_graph())
+                try:
+                    self.tab3_sensor_select.addItems(self.dbms.return_list_of_graph())
+                except TypeError:
+                    print("NOOO DATA YET")
 
 
                 try:
@@ -1906,12 +2101,18 @@ class SeachEngine_App(QWidget):
                     self.tab2_custom_view_select.addItems(self.dbms.return_list_of_views())
 
                     self.tab3_sensor_select.clear()
-                    self.tab3_sensor_select.addItems(self.dbms.return_list_of_graph())
+                    try:
+                        self.tab3_sensor_select.addItems(self.dbms.return_list_of_graph())
+                    except TypeError:
+                        print("NOOO DATA YET")
                     db_table = []
                     db_table = db_table + [''.join(item) for item in self.dbms.return_all_model()]
                     self.tab3_db_select.setCurrentIndex(db_table.index(self.tab2_model_select.currentText()))
                     self.tab3_sensor_select.clear()
-                    self.tab3_sensor_select.addItems(self.dbms.return_list_of_graph())
+                    try:
+                        self.tab3_sensor_select.addItems(self.dbms.return_list_of_graph())
+                    except TypeError:
+                        print("NOOO DATA YET")
 
                     try:
                         test = ["".join(x) for x in self.dbms.query_return_all_data("SELECT to_regclass('\"{}\"')".format(self.graph_table_name))]
@@ -1935,26 +2136,34 @@ class SeachEngine_App(QWidget):
 
 #Create Table
     def tab2_show_view(self):
-        t_c = self.dbms.return_column_names(self.tab2_custom_view_select.currentText())
-        t_l = len(t_c)
-        # create the view
-        self.tab2_tableWidget.setColumnCount(t_l)
-        self.tab2_tableWidget.setHorizontalHeaderLabels(t_c)
-        self.tab2_tableWidget.setRowCount(0)  # reset table
-        rows = 3000
-        self.tab2_tableWidget.setRowCount(rows)
-        previous_length = 0
-        for row in self.dbms.return_all_data(self.tab2_custom_view_select.currentText()):
-            for c in range (t_l):
-                self.tab2_tableWidget.setItem(previous_length, c, QTableWidgetItem(str(row[c])))
-            previous_length += 1
+        try:
+            t_c = self.dbms.return_column_names(self.tab2_custom_view_select.currentText())
+            t_l = len(t_c)
+            # create the view
+            self.tab2_tableWidget.setColumnCount(t_l)
+            self.tab2_tableWidget.setHorizontalHeaderLabels(t_c)
+            self.tab2_tableWidget.setRowCount(0)  # reset table
+            rows = 3000
+            self.tab2_tableWidget.setRowCount(rows)
+            previous_length = 0
+            for row in self.dbms.return_all_data(self.tab2_custom_view_select.currentText()):
+                for c in range(t_l):
+                    self.tab2_tableWidget.setItem(previous_length, c, QTableWidgetItem(str(row[c])))
+                previous_length += 1
 
+            self.tab2_status.setText(
+                "Please Check The Table Below: \n -----{}-----".format(self.tab2_custom_view_select.currentText()))
+            self.tab2_status.setStyleSheet("background-color: rgba(102, 255, 51, 90%);"
+                                           "color: rgba(0, 0, 0, 100%);"
+                                           )
+            # self.tab2_tableWidget.move(0, 0)
+        except TypeError:
+            print("No table selected")
+            self.tab2_status.setText("No table selected")
+            self.tab2_status.setStyleSheet("background-color: red;"
+                                           "color: white;"
+                                           )
 
-        self.tab2_status.setText("Please Check The Table Below: \n -----{}-----".format(self.tab2_custom_view_select.currentText()))
-        self.tab2_status.setStyleSheet("background-color: rgba(102, 255, 51, 90%);"
-                                  "color: rgba(0, 0, 0, 100%);"
-                                  )
-        #self.tab2_tableWidget.move(0, 0)
 
 
     def start_button(self):
@@ -1962,10 +2171,14 @@ class SeachEngine_App(QWidget):
 
         #verify cvs file
         csvlist = []
-        with open('database_create_info.csv') as csvfile:
-            reader = csv.DictReader(csvfile)
-            for row in reader:
-                csvlist.append(row['TableName'])
+        try:
+            with open('database_create_info.csv') as csvfile:
+                reader = csv.DictReader(csvfile)
+                for row in reader:
+                    csvlist.append(row['TableName'])
+        except:
+            self.status.setText("Please Create CSV File first")
+            self.status.setStyleSheet("QLabel {background-color : red; color : white;}")
 
 
         global logfile, start_time
@@ -1985,7 +2198,7 @@ class SeachEngine_App(QWidget):
             self.status.setText("Please Enter the first 6 letters of the SN")
             self.status.setStyleSheet("QLabel {background-color : red; color : white;}")
         elif not self.tab1_test_type_text.text():
-            print("Please Enter at least one test type seperate by commas (ITS, HTS,SFC)")
+            print("Please Enter at least one test type separate by commas (ITS, HTS,SFC)")
             self.status.setText("Please Enter at least one test type seperate by commas (ITS, HTS,SFC)")
             self.status.setStyleSheet("QLabel {background-color : red; color : white;}")
         else:
@@ -2167,64 +2380,27 @@ class Qapp_thread(QtCore.QThread):
         self.dbms.create_sensor_unit_table()
         self.dbms.create_main_blacklist_table()
 
+
         data_scraper = DataBaseInfo(self.table_data['model'])
         if self.table_data['manuel']:
             print("Parsing Manuel")
-            data_scraper.manual_log_parser(logfile,self.table_data['model'],self.table_data['testtype'])
+            try:
+                data_scraper.manual_log_parser(logfile,self.table_data['model'],self.table_data['testtype'])
+            except:
+                print("Please check your Manuel file path")
         else:
             print("Parsing CM")
-            data_scraper.tgz_unzip(logfile,self.table_data['model'],self.table_data['testtype'],self.table_data['from_time'],self.table_data['to_time'])
-            data_scraper.folder_parser(logfile, self.table_data['model'], self.table_data['testtype'],
-                                       self.table_data['from_time'], self.table_data['to_time'])
+            try:
+                data_scraper.tgz_unzip(logfile,self.table_data['model'],self.table_data['testtype'],self.table_data['from_time'],self.table_data['to_time'])
+                data_scraper.folder_parser(logfile, self.table_data['model'], self.table_data['testtype'],
+                                           self.table_data['from_time'], self.table_data['to_time'])
+            except:
+                print("Please check your CM file path")
         #
         #self.sig1.emit(table_data)
         self.sig1.emit({'Test':'Finish'})
 
 
-
-class Qtab_5_graph_thread(QtCore.QThread):
-
-    # string signal
-    sig1 = pyqtSignal(dict)
-
-    def __init__(self, parent=None):
-        QtCore.QThread.__init__(self, parent)
-        self.table_name = ""
-        self.sensor_x = ""
-        self.sensor_y = ""
-        self.model = ""
-        self.running = False
-
-
-
-    # Function call when first connect to the thread
-    def start_source(self, info):
-        # pass the content in "Info" to "start_source" slot, where info has the full command form the main app
-        self.table_name = info['table_name']
-        self.sensor_x = info['sensor_x']
-        self.sensor_y = info['sensor_y']
-        self.model = info['model']
-        print("The Data Collection Will Start Soon!")
-
-    def run(self):
-        self.running = True
-        print("Graph Starting!")
-
-
-        #print(self.table_name)
-        #print(self.sensor_x)
-        #print(self.sensor_y)
-
-        self.fig1 = plt.figure(FigureClass=graphFigure)
-        try:
-            self.fig1.plot_scatter(self.table_name,self.sensor_x,self.sensor_y,self.model)
-        except RuntimeError:
-            print("Run time error, please try again")
-
-        print( "Graph {} Successfully".format(self.table_name))
-
-
-        self.sig1.emit({'Result':"Data Collection Done "})
 
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)

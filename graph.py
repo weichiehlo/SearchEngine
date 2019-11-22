@@ -395,7 +395,7 @@ class graphFigure(Figure):
             for x in x_legend:
                 x_min_max = x.split('-')
                 if testtype == "All":
-                    query = "SELECT COUNT(*) FROM \"{table1}\" " \
+                    query = "SELECT COUNT(DISTINCT(\"{table1}\".serial_number)) FROM \"{table1}\" " \
                             "INNER JOIN \"{table2}\"" \
                             "ON \"{table1}\".serial_number = \"{table2}\".serial_number  " \
                             "AND \"{table1}\".ref_line_number = \"{table2}\".ref_line_number " \
@@ -411,7 +411,7 @@ class graphFigure(Figure):
                                                                         y_max=y_min_max[1], x_min=x_min_max[0],
                                                                         x_max=x_min_max[1])
                 else:
-                    query = "SELECT COUNT(*) FROM \"{table1}\" " \
+                    query = "SELECT COUNT(DISTINCT(\"{table1}\".serial_number)) FROM \"{table1}\" " \
                                 "INNER JOIN \"{table2}\"" \
                                 "ON \"{table1}\".serial_number = \"{table2}\".serial_number  " \
                                 "AND \"{table1}\".ref_line_number = \"{table2}\".ref_line_number " \
@@ -428,6 +428,7 @@ class graphFigure(Figure):
                                                                           y_max=y_min_max[1], x_min=x_min_max[0],
                                                                           x_max=x_min_max[1])
 
+                print(query)
                 temp = (int(list(self.dbms.query_return_all_data(query))[0][0]))
                 raw_count[y].append(temp)
         for key in raw_count:
@@ -523,6 +524,7 @@ class graphFigure(Figure):
             legend_list.append(temp_plot)
 
         self.ax.set_ylabel(unit)
+        self.ax.set_xlabel("Number of Reading")
         self.tight_layout()
         self.ax.yaxis.grid(True)
 
@@ -543,10 +545,90 @@ class graphFigure(Figure):
         self.ax.set_title('Sensor Trends')
         plt.show()
 
-# dbms = backend_database.MyDatabase(backend_database.POSTGRES, dbname="FG100F")
-# fig1 = plt.figure(FigureClass=graphFigure)
-# fig1.plot_line_graph(["FG100F_1","FG101F_1"])
 
+    def plot_single_table_line_graph(self, table, sensor_1, sensor_2, db):
+        self.ax = self.subplots()
+        # sensor_1 = sensor_1 + "_reading"
+        # sensor_2 = sensor_2 + "_reading"
+        legend = []
+
+        self.dbms = backend_database.MyDatabase(backend_database.POSTGRES, dbname=db)
+
+
+
+        unit = self.dbms.return_unit(sensor_1[:-8:])
+
+
+
+        reading1 = [round(float(data),2) for data in self.dbms.return_list_of_column_view(table, sensor_1)]
+        reading2 = [round(float(data),2) for data in self.dbms.return_list_of_column_view(table, sensor_2)]
+
+        readingList = []
+        for i in range(len(reading1)):
+            readingList.append({"sensor1":reading1[i],"sensor2":reading2[i]})
+
+        sortedReadingList = sorted(readingList,key = lambda i: i["sensor1"])
+
+        sorted_x = [x["sensor1"] for x in sortedReadingList]
+        sorted_y = [y["sensor2"] for y in sortedReadingList]
+
+
+        plot_x, = self.ax.plot(np.arange(len(sorted_x)), sorted_x, label=sensor_1)
+        plot_y, = self.ax.plot(np.arange(len(sorted_y)), sorted_y, label=sensor_2)
+        # plot_dif, = self.ax.plot(np.arange(len(sorted_x)), [i-j for i,j in zip(sorted_x,sorted_y)], label="Difference")
+        legend.append(plot_x)
+        legend.append(plot_y)
+        # legend.append(plot_dif)
+
+        self.ax.set_ylabel(unit)
+        self.ax.set_xlabel("Number of Reading (sorted by "+sensor_1+")")
+        self.tight_layout()
+        self.ax.yaxis.grid(True)
+        plt.legend(handles=legend)
+        self.ax.set_title('Sensor Relationship')
+        plt.show()
+
+    def plot_single_table_line_difference_graph(self, table, sensor_1, sensor_2, db):
+        self.ax = self.subplots()
+        # sensor_1 = sensor_1 + "_reading"
+        # sensor_2 = sensor_2 + "_reading"
+        legend = []
+
+        self.dbms = backend_database.MyDatabase(backend_database.POSTGRES, dbname=db)
+        unit = self.dbms.return_unit(sensor_1[:-8:])
+
+        reading1 = [round(float(data),2) for data in self.dbms.return_list_of_column_view(table, sensor_1)]
+        reading2 = [round(float(data),2) for data in self.dbms.return_list_of_column_view(table, sensor_2)]
+
+        readingList = []
+        for i in range(len(reading1)):
+            readingList.append({"sensor1":reading1[i],"sensor2":reading2[i]})
+
+        sortedReadingList = sorted(readingList,key = lambda i: i["sensor1"])
+
+        sorted_x = [x["sensor1"] for x in sortedReadingList]
+        sorted_y = [y["sensor2"] for y in sortedReadingList]
+
+
+        plot_dif, = self.ax.plot(np.arange(len(sorted_x)), [i-j for i,j in zip(sorted_x,sorted_y)], label="Difference")
+        legend.append(plot_dif)
+
+        self.ax.set_ylabel(unit)
+        self.ax.set_xlabel("Number of Reading (sorted by "+sensor_1+")")
+        self.tight_layout()
+        self.ax.yaxis.grid(True)
+        plt.legend(handles=legend)
+        self.ax.set_title('Sensor Value Difference')
+        plt.show()
+
+
+
+# dbms = backend_database.MyDatabase(backend_database.POSTGRES, dbname="FGT60F")
+# fig1 = plt.figure(FigureClass=graphFigure)
+# fig1.plot_single_table_line_graph("Temp_Horizontal_MAX","CPU ON-DIE thermal sensor","PHY B50182 temp sensor", "FGT60F")
+# fig2 = plt.figure(FigureClass=graphFigure)
+# fig2.plot_single_table_line_difference_graph("Temp_Horizontal_MAX","CPU ON-DIE thermal sensor","PHY B50182 temp sensor", "FGT60F")
+#
 
 #fig1.plotbar(["lol_graph","uwu_graph"])
 
