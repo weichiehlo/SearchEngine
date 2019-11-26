@@ -370,8 +370,11 @@ class DataBaseInfo:
             if y:
                 try:
                     hex_reading = y.group("reading")
-                    if 'x' in str(y.group("reading")):
-                        hex_reading = int(y.group("reading"), 16)
+                    strng = str(y.group("reading")).lower()
+                    for letter in ["a","b","c","d","e","f","x"]:
+                        if letter in strng:
+                            hex_reading = int(y.group("reading"), 16)
+                            break
                 except IndexError:
                     hex_reading=""
                 try:
