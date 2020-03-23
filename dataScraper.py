@@ -375,7 +375,7 @@ class DataBaseInfo:
                         if letter in strng:
                             hex_reading = int(y.group("reading"), 16)
                             break
-                except IndexError:
+                except:
                     hex_reading=""
                 try:
                     hex_alarm = y.group("alarm")
