@@ -825,6 +825,9 @@ class SeachEngine_App(QWidget):
             db_table = []
             print("no data yet")
 
+
+        if len(db_table)>2:
+            db_table = db_table[len(db_table) - 3::-1] + db_table[len(db_table) - 2:]
         self.tab5_graph_select.clear()
         self.tab5_graph_select.addItems(db_table)
 
@@ -1141,6 +1144,8 @@ class SeachEngine_App(QWidget):
             db_table = []
             print("no data yet")
 
+        if len(db_table)>2:
+            db_table = db_table[len(db_table) - 3::-1] + db_table[len(db_table) - 2:]
         self.tab5_graph_select.clear()
         self.tab5_graph_select.addItems(db_table)
 
@@ -1265,6 +1270,8 @@ class SeachEngine_App(QWidget):
                     db_table = []
                     print("no data yet")
 
+                if len(db_table)>2:
+                    db_table = db_table[len(db_table) - 3::-1] + db_table[len(db_table) - 2:]
                 self.tab5_graph_select.clear()
                 self.tab5_graph_select.addItems(db_table)
 
@@ -1290,6 +1297,8 @@ class SeachEngine_App(QWidget):
                     db_table = []
                     print("no data yet")
 
+                if len(db_table)>2:
+                    db_table = db_table[len(db_table) - 3::-1] + db_table[len(db_table) - 2:]
                 self.tab5_graph_select.clear()
                 self.tab5_graph_select.addItems(db_table)
 
@@ -1338,7 +1347,9 @@ class SeachEngine_App(QWidget):
                     db_table = []
                     print("no data yet")
 
-                self.tab5_graph_select.clear()
+                if len(db_table)>2:
+                    db_table = db_table[len(db_table) - 3::-1] + db_table[len(db_table) - 2:]
+                self.tab5_graph_select.clear()                
                 self.tab5_graph_select.addItems(db_table)
 
             except TypeError:
@@ -1362,7 +1373,8 @@ class SeachEngine_App(QWidget):
                 except:
                     db_table = []
                     print("no data yet")
-
+                if len(db_table)>2:
+                    db_table = db_table[len(db_table) - 3::-1] + db_table[len(db_table) - 2:]
                 self.tab5_graph_select.clear()
                 self.tab5_graph_select.addItems(db_table)
 
@@ -1432,6 +1444,8 @@ class SeachEngine_App(QWidget):
                     db_table = []
                     print("no data yet")
 
+                if len(db_table)>2:
+                    db_table = db_table[len(db_table) - 3::-1] + db_table[len(db_table) - 2:]
                 self.tab5_graph_select.clear()
                 self.tab5_graph_select.addItems(db_table)
                 self.tab5_create_max_view(table_x, table_y, view_name)
@@ -1458,6 +1472,9 @@ class SeachEngine_App(QWidget):
                     db_table = []
                     print("no data yet")
 
+
+                if len(db_table)>2:
+                    db_table = db_table[len(db_table) - 3::-1] + db_table[len(db_table) - 2:]
                 self.tab5_graph_select.clear()
                 self.tab5_graph_select.addItems(db_table)
                 self.tab5_create_max_view(table_x,table_y,view_name)
