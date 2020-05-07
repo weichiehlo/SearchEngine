@@ -75,7 +75,16 @@ class App(QMainWindow):
 
         self.table_widget = SeachEngine_App(self)
 
-        self.setCentralWidget(self.table_widget)
+        self.scroll = QScrollArea()
+        self.scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn);
+        self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff);
+        self.scroll.setWidget(self.table_widget)
+        self.scroll.setWidgetResizable(True)
+
+        self.setCentralWidget(self.scroll)
+
+        #
+        # self.setCentralWidget(self.table_widget)
 
 
         self.show()
