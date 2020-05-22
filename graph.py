@@ -32,6 +32,7 @@ class graphFigure(Figure):
                     return idx - 1 + dif / total_dif
                 except ZeroDivisionError:
                     return 0
+        return len(labels)
 
 
     def plotbar_sensor(self,table_list):
